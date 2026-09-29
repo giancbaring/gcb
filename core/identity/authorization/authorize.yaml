@@ -1,0 +1,82 @@
+kind: composition
+id: authorize
+version: 1.0.0
+domain: identity
+api: identity-authorization
+
+description: >
+  Gate an action on a Principal's authority. Given a Principal and the
+  action token required to perform it, decide whether the action may
+  proceed. Denial is Err FORBIDDEN, not Ok(false) — the composition
+  answers "may this happen?" and a refusal is a terminal outcome, not
+  a branch. This is the counterpart to authenticate: authenticate
+  establishes who; authorize establishes whether.
+
+interface:
+  inputs:
+    - { name: principal, type: Principal, required: true }
+    - { name: action,    type: string,    required: true }
+  outputs:
+    - type: "Result<Principal, AuthzFailure>"
+
+depends_on:
+  primitives:
+    - result
+    - principal
+    - authz-failure
+  functions:
+    - permission-check
+
+invariants:
+  - A permitted decision returns Ok carrying the same Principal.
+  - A denied decision returns Err FORBIDDEN. Denial is terminal.
+  - A missing Principal returns Err NO_PRINCIPAL, never FORBIDDEN.
+  - An empty or non-string action returns Err UNKNOWN_ACTION.
+  - The Principal is never mutated by the check.
+  - Never throws. All failures are Err.
+
+threats:
+  - id: T1
+    name: Confusion between denial and fault
+    mitigation: >
+      FORBIDDEN and INTERNAL are distinct codes. A caller cannot mistake
+      a policy refusal for a system outage, and monitoring can alert on
+      INTERNAL without firing on every denial.
+  - id: T2
+    name: Principal substitution
+    mitigation: >
+      The same Principal that was checked is the one returned. A caller
+      cannot substitute a different Principal on the Ok branch.
+  - id: T3
+    name: Wildcard authority bleed
+    mitigation: >
+      Delegated to permission-check, which uses exact-match. Wildcards
+      and prefixes do not expand.
+  - id: T4
+    name: Malformed action tokens
+    mitigation: >
+      Empty or non-string action tokens return UNKNOWN_ACTION. This is
+      distinct from FORBIDDEN so that audit can distinguish "action
+      does not exist" from "principal lacks authority."
+
+bindings:
+  gms-governance:
+    actions: "declared in the PSO — user:create, user:update, role:change"
+
+tests:
+  - given: "a principal carrying the required action"
+    expect: "Ok carrying the same principal"
+  - given: "a principal not carrying the required action"
+    expect: "Err FORBIDDEN"
+  - given: "a principal with empty authority"
+    expect: "Err FORBIDDEN for any action"
+  - given: "a missing principal"
+    expect: "Err NO_PRINCIPAL"
+  - given: "an empty action string"
+    expect: "Err UNKNOWN_ACTION"
+  - given: "a non-string action"
+    expect: "Err UNKNOWN_ACTION"
+  - given: "any decision"
+    expect: "the input principal is not mutated"
+  - given: "any decision"
+    expect: "the composition never throws"

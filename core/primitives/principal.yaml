@@ -1,0 +1,75 @@
+kind: primitive
+id: principal
+version: 1.0.0
+domain: foundation
+
+description: >
+  An authenticated subject together with the authority context that
+  attaches to that authentication. A Principal is what the system uses
+  to make authorization decisions. It answers: who is this, and what
+  authority do they carry in this context?
+
+shape:
+  type: record
+  fields:
+    - name: subject
+      type: Subject
+      required: true
+    - name: session_id
+      type: Identifier
+      required: true
+    - name: authority
+      type: immutable-set<string>
+      required: true
+      default: []
+    - name: issued_at
+      type: Timestamp
+      required: true
+
+invariants:
+  - A Principal is only constructed from a verified Assertion, never from raw input.
+  - Authority is a set of opaque strings. The GCB does not interpret them.
+  - A Principal is immutable. Authorization reads it, never writes it.
+  - Two Principals are the same identity if their subject and session_id match.
+
+threats:
+  - id: T1
+    name: Forgery from client input
+    mitigation: >
+      Construction is restricted to the authentication flow. A Principal
+      cannot be assembled from a request body. The type system enforces
+      this by requiring an Assertion as input.
+  - id: T2
+    name: Authority creep
+    mitigation: >
+      Authority is a frozen set, established at construction. It cannot
+      be widened by any caller. Widening requires re-authentication,
+      which produces a new Principal.
+  - id: T3
+    name: Session fixation
+    mitigation: >
+      session_id is required and originates from the auth flow, not from
+      the caller. A Principal without a session_id cannot be constructed.
+  - id: T4
+    name: Stale authority
+    mitigation: >
+      issued_at is required. Downstream systems may reject Principals
+      older than a policy-defined threshold. Enforcement is a
+      composition concern, not this primitive's.
+
+bindings:
+  gms-governance:
+    authority_source: role_code
+    authority_values: [ADMIN, PRINCIPAL, ADVISER, OFFICER, STAFF]
+
+tests:
+  - given: "a Principal constructed from a valid Assertion"
+    expect: "carries the subject, session_id, authority, and issued_at from the Assertion"
+  - given: "attempt to mutate principal.authority"
+    expect: "no effect — frozen"
+  - given: "two Principals with the same subject and session_id"
+    expect: "structurally equal"
+  - given: "a Principal with empty authority"
+    expect: "constructed successfully — anonymous authority is valid"
+  - given: "constructed Principal"
+    expect: "issued_at is a valid Timestamp"

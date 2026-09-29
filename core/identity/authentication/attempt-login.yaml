@@ -1,0 +1,113 @@
+kind: composition
+id: attempt-login
+version: 1.0.0
+domain: identity
+api: identity-authentication
+
+description: >
+  The secure login attempt. Guards the authentication flow with a rate
+  limit, records every attempt through an audit sink, and produces a
+  Session on success. This is the composition a login endpoint invokes.
+  It adds no invariants of its own — every guarantee is inherited from
+  the pieces it wires together. It exists to fix the order in which
+  those pieces run.
+
+interface:
+  inputs:
+    - { name: identifier,          type: Identifier,             required: true }
+    - { name: credential,          type: Credential,             required: true }
+    - { name: context,             type: AuthenticationContext,  required: true }
+    - { name: comparator,          type: Comparator,             required: true }
+    - { name: session_id_gen,      type: IdGenerator,            required: true }
+    - { name: session_lifetime,    type: Duration,               required: true }
+    - { name: rate_limit_key,      type: string,                 required: true }
+    - { name: rate_limit_policy,   type: RateLimitPolicy,        required: true }
+    - { name: rate_limit_store,    type: RateLimitStore,         required: true }
+    - { name: event_sink,          type: AuthEventSink,          required: true }
+    - { name: clock,               type: "() => Timestamp",      required: true }
+  outputs:
+    - type: "Result<Session, AttemptLoginFailure>"
+
+depends_on:
+  primitives:
+    - result
+    - identifier
+    - credential
+    - session
+    - timestamp
+    - auth-failure
+    - rate-limit-failure
+  compositions:
+    - authenticate
+    - create-session
+    - rate-limit
+    - record-auth-event
+
+invariants:
+  - The rate limit is checked before authentication runs.
+  - A rate-limited attempt records an auth event with outcome DENIED and does not authenticate.
+  - A rate-limited attempt is recorded as an auth event with outcome
+    DENIED before the function returns. The event's subject is a synthetic
+    Subject derived from the input Identifier — identity is claimed, not
+    verified, and the detail map marks it as pre-resolution.
+  - A failed authentication records an auth event with outcome FAILURE.
+  - A successful login records an auth event with outcome SUCCESS after the session is created.
+  - If the audit sink fails, the composition returns Err INTERNAL rather than Ok.
+  - Every attempt — success or failure, rate-limited or not — produces exactly one auth event when the identifier resolves to a subject.
+  - The rate limit key is opaque to this composition.
+  - Never throws.
+
+threats:
+  - id: T1
+    name: Credential stuffing
+    mitigation: >
+      The rate limit is checked before the credential is examined.
+      Repeated attempts consume the rate limit budget and are refused
+      with a rate-limited outcome, which is distinct from an
+      authentication failure. An attacker cannot distinguish a valid
+      credential they have not yet guessed from an invalid one once
+      they have exhausted their budget.
+  - id: T2
+    name: Silent failures
+    mitigation: >
+      Every non-rate-limited attempt is recorded — success and failure
+      alike. A missing audit event is a defect of the composition, not
+      of the caller.
+  - id: T3
+    name: Rate limit bypass on failed authentication
+    mitigation: >
+      The rate limit is consumed on every attempt, not only on
+      successful authentication. A brute force attack against a wrong
+      password exhausts the budget the same way as one against a
+      correct password.
+  - id: T4
+    name: Credential leakage across the pipeline
+    mitigation: >
+      The credential never reaches the event sink and never appears in
+      any returned value. Only the identifier and the outcome are
+      recorded.
+
+bindings:
+  gms-governance:
+    rate_limit_policy: { limit: 5, window: PT15M }
+    rate_limit_key: "rate-limit:login:<identifier>"
+
+tests:
+  - given: "a rate-limit refusal"
+    expect: "Err rate-limited; authentication is not attempted"
+  - given: "a rate-limit refusal"
+    expect: "a DENIED auth event is recorded; the credential does not appear in it"
+  - given: "a rate limit refusal"
+    expect: "a DENIED auth event is recorded with detail.reason = 'rate-limited'; the function still returns Err kind=rate-limited"
+  - given: "an unknown identifier"
+    expect: "Err auth (UNKNOWN_SUBJECT); a FAILURE auth event is recorded"
+  - given: "a mismatching credential"
+    expect: "Err auth (MISMATCH); a FAILURE auth event is recorded"
+  - given: "valid credentials and a working context"
+    expect: "Ok carrying an active Session; a SUCCESS auth event is recorded"
+  - given: "any attempt"
+    expect: "the rate limit store is consulted exactly once"
+  - given: "any attempt"
+    expect: "the credential does not appear in any returned value or recorded event"
+  - given: "any input"
+    expect: "the composition never throws"

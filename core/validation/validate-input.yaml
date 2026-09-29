@@ -1,0 +1,77 @@
+kind: function
+id: validate-input
+version: 1.0.0
+domain: foundation
+module: validation
+api: input-validation
+
+description: >
+  Run a value through a set of named validators and collect every
+  failure. Returns Ok when all validators pass; Err carrying a list of
+  validation failures when one or more reject. Collects all failures
+  rather than stopping at the first, so callers can present a complete
+  picture rather than a whack-a-mole error.
+
+interface:
+  inputs:
+    - { name: value,      type: unknown,            required: true }
+    - { name: validators, type: "Validator[]",      required: true }
+  outputs:
+    - type: "Result<unknown, ValidationFailure[]>"
+
+depends_on:
+  primitives:
+    - result
+
+invariants:
+  - Every validator runs. No early exit on the first failure.
+  - A validator that throws is recorded as a failure; the throw does not escape.
+  - The failure list preserves the order of the validators that produced them.
+  - An empty validator list always returns Ok.
+  - The value is never mutated.
+
+threats:
+  - id: T1
+    name: First-error-only masking
+    mitigation: >
+      All validators run. A caller sees every failure, which prevents
+      the case where a malicious input triggers one validator early to
+      hide a second rejection.
+  - id: T2
+    name: Validator throws breaking the pipeline
+    mitigation: >
+      A throwing validator is caught and recorded as a failure with the
+      validator's name and a generic reason. The remaining validators
+      still run.
+  - id: T3
+    name: Silent failure when no validators are given
+    mitigation: >
+      An empty validator list returns Ok. This is intentional — the
+      function validates; it does not require validation to have
+      occurred. Callers who require a validator supply one.
+  - id: T4
+    name: Validator identity collision
+    mitigation: >
+      Each failure carries the validator's name. Two validators with
+      the same name produce two entries. Names are informational, not
+      identifiers.
+
+bindings:
+  gms-governance:
+    validators: "composed per field — email-shape, ukey-shape, role-shape"
+
+tests:
+  - given: "a value and an empty validator list"
+    expect: "Ok"
+  - given: "a value and one passing validator"
+    expect: "Ok"
+  - given: "a value and one failing validator"
+    expect: "Err carrying one failure with the validator's name"
+  - given: "a value and two failing validators"
+    expect: "Err carrying both failures, in the order the validators ran"
+  - given: "a value and one passing plus one failing validator"
+    expect: "Err carrying only the failing validator's failure"
+  - given: "a validator that throws"
+    expect: "Err carrying that validator's failure; the throw does not escape"
+  - given: "any input"
+    expect: "the value is never mutated"

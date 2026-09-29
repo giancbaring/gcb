@@ -1,0 +1,81 @@
+kind: function
+id: session-from-storage
+version: 1.0.0
+domain: identity
+module: session/persistence
+api: session-management
+
+description: >
+  Reconstruct a Session from a raw storage record. Storage layers
+  return fields as untyped values — this function validates them and
+  produces either a Session or a reason for rejection. Missing or
+  malformed fields become Err, never a partially-built session.
+
+interface:
+  inputs:
+    - { name: record, type: SessionStorageRecord, required: true }
+  outputs:
+    - type: "Result<Session, string>"
+
+depends_on:
+  primitives:
+    - result
+    - session
+    - identifier
+    - principal
+    - timestamp
+
+invariants:
+  - Every field is validated. Missing or malformed values return Err.
+  - The result is either a fully-formed Session or an error. No partial sessions.
+  - The function does not throw. Failures are returned as Err.
+  - Rejection reasons name the field, so a caller can log which one failed.
+  - Identity is preserved: the reconstructed session equals the stored one.
+
+threats:
+  - id: T1
+    name: Silent acceptance of corrupt storage
+    mitigation: >
+      Every field is checked before makeSession is called. A missing
+      field or wrong type returns Err with the field name. A caller
+      cannot accidentally operate on a session built from partial data.
+  - id: T2
+    name: Storage-layer type confusion
+    mitigation: >
+      Numbers arrive as strings from some databases. This function
+      rejects non-number types for timestamps and counts, forcing the
+      storage adapter to convert explicitly.
+  - id: T3
+    name: Expired sessions re-issued as active
+    mitigation: >
+      The state field is passed through as stored. A session that was
+      persisted as revoked or expired reconstructs in that state. There
+      is no path that upgrades a session to 'active' from storage.
+  - id: T4
+    name: Principal tampering in the storage layer
+    mitigation: >
+      The principal record is validated structurally. A caller that
+      corrupts the storage row cannot produce a Session whose principal
+      is a different shape.
+
+bindings:
+  gms-governance:
+    source: "sessions table; JOIN to users for principal fields"
+
+tests:
+  - given: "a complete, well-formed storage record"
+    expect: "Ok carrying a Session whose fields match the record"
+  - given: "a record missing the id"
+    expect: "Err naming 'id'"
+  - given: "a record with a non-numeric createdAt"
+    expect: "Err naming 'createdAt'"
+  - given: "a record with a non-numeric expiresAt"
+    expect: "Err naming 'expiresAt'"
+  - given: "a record whose expiresAt is not after createdAt"
+    expect: "Err; makeSession rejects"
+  - given: "a record with an unknown state"
+    expect: "Err; makeSession rejects"
+  - given: "a record with a malformed principal"
+    expect: "Err naming 'principal'"
+  - given: "a record stored as revoked"
+    expect: "Ok carrying a Session in state revoked, never active"
