@@ -7,8 +7,8 @@
  * event. This composition has no failure mode.
  */
 
-import type { Session } from '../../primitives/session'
-import { revoke } from '../../primitives/session'
+import type { Session } from '../primitives/session'
+import { revoke } from '../primitives/session'
 
 export function logout(session: Session): Session {
   return revoke(session)

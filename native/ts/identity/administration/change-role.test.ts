@@ -6,10 +6,10 @@ import { describe, it, expect } from 'vitest'
 import { unsafeIdentifier } from '../../primitives/identifier'
 import { makeSubject } from '../../primitives/subject'
 import { fromMillis } from '../../primitives/timestamp'
-import { principalFromAssertion, type Principal } from '../../primitives/principal'
-import { AUTHZ_FAILURE } from '../../primitives/authz-failure'
+import { principalFromAssertion, type Principal } from '../primitives/principal'
+import { AUTHZ_FAILURE } from '../primitives/authz-failure'
 import { OUTCOME } from '../../primitives/outcome'
-import type { AuthEvent } from '../../primitives/auth-event'
+import type { AuthEvent } from '../primitives/auth-event'
 import type { AuthEventSink } from '../observability/record-auth-event'
 import { changeRole, ROLE_CHANGE_ACTION, type RoleSink } from './change-role'
 
@@ -100,8 +100,10 @@ describe('change-role — permitted', () => {
       eventSink,
       fixedClock,
     )
-    expect(writes[0].subject).toBe(target)
-    expect(writes[0].authority).toEqual(['OFFICER', 'ADVISER'])
+    const write = writes[0]
+    if (write === undefined) throw new Error('expected role sink write')
+    expect(write.subject).toBe(target)
+    expect(write.authority).toEqual(['OFFICER', 'ADVISER'])
   })
 
   it('the new authority list reaches the sink frozen', async () => {
@@ -115,7 +117,9 @@ describe('change-role — permitted', () => {
       eventSink,
       fixedClock,
     )
-    expect(Object.isFrozen(writes[0].authority)).toBe(true)
+    const write = writes[0]
+    if (write === undefined) throw new Error('expected role sink write')
+    expect(Object.isFrozen(write.authority)).toBe(true)
   })
 
   it('a SUCCESS auth event is appended', async () => {
@@ -130,7 +134,9 @@ describe('change-role — permitted', () => {
       fixedClock,
     )
     expect(events.length).toBe(1)
-    expect(events[0].outcome).toBe(OUTCOME.SUCCESS)
+    const event = events[0]
+    if (event === undefined) throw new Error('expected auth event')
+    expect(event.outcome).toBe(OUTCOME.SUCCESS)
   })
 })
 
@@ -176,7 +182,9 @@ describe('change-role — denied', () => {
       fixedClock,
     )
     expect(events.length).toBe(1)
-    expect(events[0].outcome).toBe(OUTCOME.DENIED)
+    const event = events[0]
+    if (event === undefined) throw new Error('expected auth event')
+    expect(event.outcome).toBe(OUTCOME.DENIED)
   })
 })
 
@@ -247,7 +255,9 @@ describe('change-role — sink failure', () => {
       fixedClock,
     )
     expect(events.length).toBe(1)
-    expect(events[0].outcome).toBe(OUTCOME.ERROR)
+    const event = events[0]
+    if (event === undefined) throw new Error('expected auth event')
+    expect(event.outcome).toBe(OUTCOME.ERROR)
   })
 
   it('does not propagate the role sink error text', async () => {

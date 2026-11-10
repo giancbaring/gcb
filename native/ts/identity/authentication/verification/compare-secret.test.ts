@@ -3,9 +3,9 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { Credential } from '../../../primitives/credential'
+import { Credential } from '../../primitives/credential'
 import { Secret } from '../../../primitives/secret'
-import { AUTH_FAILURE } from '../../../primitives/auth-failure'
+import { AUTH_FAILURE } from '../../primitives/auth-failure'
 import { compareSecret, type Comparator } from './compare-secret'
 
 const cred = Credential.fromRaw('hunter2')

@@ -6,8 +6,8 @@ import { describe, it, expect } from 'vitest'
 import { unsafeIdentifier } from '../../primitives/identifier'
 import { makeSubject } from '../../primitives/subject'
 import { fromMillis } from '../../primitives/timestamp'
-import { principalFromAssertion, type Principal } from '../../primitives/principal'
-import { AUTH_FAILURE } from '../../primitives/auth-failure'
+import { principalFromAssertion, type Principal } from '../primitives/principal'
+import { AUTH_FAILURE } from '../primitives/auth-failure'
 import { permissionCheck } from './permission-check'
 
 function principalWith(authority: string[]): Principal {

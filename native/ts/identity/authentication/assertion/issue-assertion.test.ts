@@ -6,7 +6,7 @@ import { describe, it, expect } from 'vitest'
 import { unsafeIdentifier } from '../../../primitives/identifier'
 import { makeSubject } from '../../../primitives/subject'
 import { fromMillis } from '../../../primitives/timestamp'
-import { AUTH_FAILURE } from '../../../primitives/auth-failure'
+import { AUTH_FAILURE } from '../../primitives/auth-failure'
 import { issueAssertion, type IdGenerator, type Clock } from './issue-assertion'
 
 const subject = makeSubject(unsafeIdentifier('GMS001'), 'human')

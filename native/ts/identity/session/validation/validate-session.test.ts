@@ -7,9 +7,9 @@ import { isOk } from '../../../primitives/result'
 import { unsafeIdentifier } from '../../../primitives/identifier'
 import { makeSubject } from '../../../primitives/subject'
 import { fromMillis, duration, add } from '../../../primitives/timestamp'
-import { principalFromAssertion } from '../../../primitives/principal'
-import { makeSession, revoke, expire, SESSION_STATE } from '../../../primitives/session'
-import { AUTH_FAILURE } from '../../../primitives/auth-failure'
+import { principalFromAssertion } from '../../primitives/principal'
+import { makeSession, revoke, expire } from '../../primitives/session'
+import { AUTH_FAILURE } from '../../primitives/auth-failure'
 import { validateSession } from './validate-session'
 
 const subject = makeSubject(unsafeIdentifier('GMS001'), 'human')

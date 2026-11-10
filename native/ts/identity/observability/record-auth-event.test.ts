@@ -5,10 +5,10 @@
 import { describe, it, expect } from 'vitest'
 import { unsafeIdentifier } from '../../primitives/identifier'
 import { makeSubject } from '../../primitives/subject'
-import { makeActor, ACTOR_VIA } from '../../primitives/actor'
-import { AUTH_ACTION } from '../../primitives/auth-event'
+import { makeActor, ACTOR_VIA } from '../primitives/actor'
+import { AUTH_ACTION } from '../primitives/auth-event'
 import { OUTCOME } from '../../primitives/outcome'
-import { AUTH_FAILURE } from '../../primitives/auth-failure'
+import { AUTH_FAILURE } from '../primitives/auth-failure'
 import { fromMillis } from '../../primitives/timestamp'
 import {
   recordAuthEvent,

@@ -6,7 +6,7 @@
  * through session-from-storage. Never throws.
  */
 
-import type { Session } from '../../../primitives/session'
+import type { Session } from '../../primitives/session'
 import type { Identifier } from '../../../primitives/identifier'
 import type { Timestamp } from '../../../primitives/timestamp'
 

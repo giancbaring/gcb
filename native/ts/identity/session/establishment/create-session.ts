@@ -8,12 +8,12 @@
  */
 
 import { ok, err, type Result } from '../../../primitives/result'
-import type { Assertion } from '../../../primitives/assertion'
+import type { Assertion } from '../../primitives/assertion'
 import type { Duration, Timestamp } from '../../../primitives/timestamp'
 import { add } from '../../../primitives/timestamp'
-import { principalFromAssertion } from '../../../primitives/principal'
-import { makeSession, SESSION_STATE, type Session } from '../../../primitives/session'
-import { AUTH_FAILURE, type AuthFailure } from '../../../primitives/auth-failure'
+import { principalFromAssertion } from '../../primitives/principal'
+import { makeSession, SESSION_STATE, type Session } from '../../primitives/session'
+import { AUTH_FAILURE, type AuthFailure } from '../../primitives/auth-failure'
 
 export type Clock = () => Timestamp
 

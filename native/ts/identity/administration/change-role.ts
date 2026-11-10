@@ -8,13 +8,13 @@
  */
 
 import { ok, err, type Result } from '../../primitives/result'
-import type { Principal } from '../../primitives/principal'
+import type { Principal } from '../primitives/principal'
 import type { Subject } from '../../primitives/subject'
 import type { Timestamp } from '../../primitives/timestamp'
-import { AUTHZ_FAILURE, type AuthzFailure } from '../../primitives/authz-failure'
+import { AUTHZ_FAILURE, type AuthzFailure } from '../primitives/authz-failure'
 import { OUTCOME } from '../../primitives/outcome'
-import { AUTH_ACTION, makeAuthEvent } from '../../primitives/auth-event'
-import { makeActor, ACTOR_VIA } from '../../primitives/actor'
+import { AUTH_ACTION, makeAuthEvent } from '../primitives/auth-event'
+import { makeActor, ACTOR_VIA } from '../primitives/actor'
 import { authorize } from '../authorization/authorize'
 import type { AuthEventSink } from '../observability/record-auth-event'
 

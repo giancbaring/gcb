@@ -13,9 +13,9 @@
  * no mutating methods rather than a raw Set.
  */
 
-import type { Subject } from './subject'
-import type { Identifier } from './identifier'
-import type { Timestamp } from './timestamp'
+import type { Subject } from '../../primitives/subject'
+import type { Identifier } from '../../primitives/identifier'
+import type { Timestamp } from '../../primitives/timestamp'
 import type { Assertion } from './assertion'
 
 export type { Assertion } from './assertion'

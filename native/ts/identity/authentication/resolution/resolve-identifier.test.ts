@@ -5,7 +5,7 @@
 import { describe, it, expect } from 'vitest'
 import { unsafeIdentifier } from '../../../primitives/identifier'
 import { makeSubject } from '../../../primitives/subject'
-import { AUTH_FAILURE } from '../../../primitives/auth-failure'
+import { AUTH_FAILURE } from '../../primitives/auth-failure'
 import { resolveIdentifier, type Resolver } from './resolve-identifier'
 
 const id = unsafeIdentifier('GMS001')

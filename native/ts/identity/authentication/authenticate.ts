@@ -8,14 +8,13 @@
  * functions it calls.
  */
 
-import { ok, err, type Result } from '../../primitives/result'
+import { err, type Result } from '../../primitives/result'
 import type { Identifier } from '../../primitives/identifier'
-import type { Credential } from '../../primitives/credential'
+import type { Credential } from '../primitives/credential'
 import type { Secret } from '../../primitives/secret'
 import type { Subject } from '../../primitives/subject'
-import type { Assertion } from '../../primitives/assertion'
-import type { Timestamp } from '../../primitives/timestamp'
-import { AUTH_FAILURE, type AuthFailure } from '../../primitives/auth-failure'
+import type { Assertion } from '../primitives/assertion'
+import { AUTH_FAILURE, type AuthFailure } from '../primitives/auth-failure'
 import { compareSecret, type Comparator } from './verification/compare-secret'
 import {
   issueAssertion,

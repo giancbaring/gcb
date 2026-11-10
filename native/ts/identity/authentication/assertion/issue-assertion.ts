@@ -12,8 +12,8 @@ import { ok, err, type Result } from '../../../primitives/result'
 import type { Subject } from '../../../primitives/subject'
 import type { Identifier } from '../../../primitives/identifier'
 import type { Timestamp } from '../../../primitives/timestamp'
-import { makeAssertion, type Assertion } from '../../../primitives/assertion'
-import { AUTH_FAILURE, type AuthFailure } from '../../../primitives/auth-failure'
+import { makeAssertion, type Assertion } from '../../primitives/assertion'
+import { AUTH_FAILURE, type AuthFailure } from '../../primitives/auth-failure'
 
 /** Supplied by the caller to produce session identifiers. */
 export type IdGenerator = () => Identifier

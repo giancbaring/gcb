@@ -8,11 +8,11 @@
  */
 
 import { ok, err, type Result } from '../../../primitives/result'
-import type { Session } from '../../../primitives/session'
-import { isUsable } from '../../../primitives/session'
-import type { Principal } from '../../../primitives/principal'
+import type { Session } from '../../primitives/session'
+import { isUsable } from '../../primitives/session'
+import type { Principal } from '../../primitives/principal'
 import type { Timestamp } from '../../../primitives/timestamp'
-import { AUTH_FAILURE, type AuthFailure } from '../../../primitives/auth-failure'
+import { AUTH_FAILURE, type AuthFailure } from '../../primitives/auth-failure'
 
 export type Clock = () => Timestamp
 

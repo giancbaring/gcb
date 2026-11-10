@@ -8,9 +8,9 @@
  */
 
 import { ok, err, type Result } from '../../../primitives/result'
-import type { Credential } from '../../../primitives/credential'
+import type { Credential } from '../../primitives/credential'
 import type { Secret } from '../../../primitives/secret'
-import { AUTH_FAILURE, type AuthFailure } from '../../../primitives/auth-failure'
+import { AUTH_FAILURE, type AuthFailure } from '../../primitives/auth-failure'
 
 /**
  * A Comparator receives the raw credential bytes and the stored secret

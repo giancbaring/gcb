@@ -5,9 +5,9 @@
 import { describe, it, expect } from 'vitest'
 import { unsafeIdentifier } from '../../../primitives/identifier'
 import { makeSubject } from '../../../primitives/subject'
-import { Credential } from '../../../primitives/credential'
+import { Credential } from '../../primitives/credential'
 import { Secret } from '../../../primitives/secret'
-import { AUTH_FAILURE } from '../../../primitives/auth-failure'
+import { AUTH_FAILURE } from '../../primitives/auth-failure'
 import type { Comparator } from './compare-secret'
 import { verifyCredential, type VerificationContext } from './verify-credential'
 

@@ -3,9 +3,9 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { isOk, isErr } from './result'
-import { unsafeIdentifier } from './identifier'
-import { makeSubject } from './subject'
+import { isOk, isErr } from '../../primitives/result'
+import { unsafeIdentifier } from '../../primitives/identifier'
+import { makeSubject } from '../../primitives/subject'
 import { ACTOR_VIA, makeActor, isActorVia, allActorVia } from './actor'
 
 function adminSubject() {

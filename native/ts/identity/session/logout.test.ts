@@ -6,8 +6,8 @@ import { describe, it, expect } from 'vitest'
 import { unsafeIdentifier } from '../../primitives/identifier'
 import { makeSubject } from '../../primitives/subject'
 import { fromMillis, duration, add } from '../../primitives/timestamp'
-import { principalFromAssertion } from '../../primitives/principal'
-import { makeSession, SESSION_STATE, type Session } from '../../primitives/session'
+import { principalFromAssertion } from '../primitives/principal'
+import { makeSession, SESSION_STATE, type Session } from '../primitives/session'
 import { logout } from './logout'
 
 const subject = makeSubject(unsafeIdentifier('GMS001'), 'human')

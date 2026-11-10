@@ -7,15 +7,15 @@
  */
 
 import { ok, err, type Result } from '../../primitives/result'
-import type { Credential } from '../../primitives/credential'
+import type { Credential } from '../primitives/credential'
 import type { Secret } from '../../primitives/secret'
 import type { Subject } from '../../primitives/subject'
 import type { Timestamp } from '../../primitives/timestamp'
-import type { KeyedResetToken } from '../../primitives/reset-token'
-import { AUTH_FAILURE, type AuthFailure } from '../../primitives/auth-failure'
-import { AUTH_ACTION, makeAuthEvent } from '../../primitives/auth-event'
+import type { KeyedResetToken } from '../primitives/reset-token'
+import { AUTH_FAILURE, type AuthFailure } from '../primitives/auth-failure'
+import { AUTH_ACTION, makeAuthEvent } from '../primitives/auth-event'
 import { OUTCOME } from '../../primitives/outcome'
-import { makeActor, ACTOR_VIA } from '../../primitives/actor'
+import { makeActor, ACTOR_VIA } from '../primitives/actor'
 import { hashCredential, type Hasher } from './hash-credential'
 import type { AuthEventSink } from '../observability/record-auth-event'
 

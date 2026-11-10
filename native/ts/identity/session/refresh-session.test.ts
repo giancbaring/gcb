@@ -6,15 +6,15 @@ import { describe, it, expect } from 'vitest'
 import { unsafeIdentifier } from '../../primitives/identifier'
 import { makeSubject } from '../../primitives/subject'
 import { fromMillis, duration, add, toMillis } from '../../primitives/timestamp'
-import { principalFromAssertion } from '../../primitives/principal'
+import { principalFromAssertion } from '../primitives/principal'
 import {
   makeSession,
   revoke,
   expire,
   SESSION_STATE,
   type Session,
-} from '../../primitives/session'
-import { AUTH_FAILURE } from '../../primitives/auth-failure'
+} from '../primitives/session'
+import { AUTH_FAILURE } from '../primitives/auth-failure'
 import { refreshSession } from './refresh-session'
 
 const subject = makeSubject(unsafeIdentifier('GMS001'), 'human')
@@ -78,7 +78,7 @@ describe('refresh-session — happy path', () => {
     const t1 = midway()
     const r = refreshSession(s, hour, () => t1)
     if (!r.ok) throw new Error('expected ok')
-    expect(toMillis(r.value.expiresAt)).toBe(toMillis(t1) + toMillis(hour))
+    expect(toMillis(r.value.expiresAt)).toBe(toMillis(add(t1, hour)))
   })
 
   it('the new session is frozen', () => {

@@ -5,20 +5,20 @@
 import { describe, it, expect } from 'vitest'
 import { unsafeIdentifier } from '../../primitives/identifier'
 import { makeSubject } from '../../primitives/subject'
-import { Credential } from '../../primitives/credential'
+import { Credential } from '../primitives/credential'
 import { Secret } from '../../primitives/secret'
 import { fromMillis, duration } from '../../primitives/timestamp'
-import { SESSION_STATE } from '../../primitives/session'
-import { AUTH_FAILURE } from '../../primitives/auth-failure'
-import { RATE_LIMIT_FAILURE } from '../../primitives/rate-limit-failure'
+import { SESSION_STATE } from '../primitives/session'
+import { AUTH_FAILURE } from '../primitives/auth-failure'
+import { RATE_LIMIT_FAILURE } from '../primitives/rate-limit-failure'
 import { OUTCOME } from '../../primitives/outcome'
-import type { AuthEvent } from '../../primitives/auth-event'
+import type { AuthEvent } from '../primitives/auth-event'
 import type { Comparator } from './verification/compare-secret'
 import type { IdGenerator, Clock } from './assertion/issue-assertion'
 import type { AuthenticationContext } from './authenticate'
 import type { RateLimitStore } from '../throttling/rate-limit'
 import type { AuthEventSink } from '../observability/record-auth-event'
-import { attemptLogin, type AttemptLoginFailure } from './attempt-login'
+import { attemptLogin } from './attempt-login'
 
 const id = unsafeIdentifier('GMS001')
 const subject = makeSubject(id, 'human')
@@ -79,7 +79,9 @@ describe('attempt-login — happy path', () => {
       stableIdGen, hour, 'k', policy, allowStore(), sink, stableClock,
     )
     expect(events.length).toBe(1)
-    expect(events[0].outcome).toBe(OUTCOME.SUCCESS)
+    const event = events[0]
+    if (event === undefined) throw new Error('expected auth event')
+    expect(event.outcome).toBe(OUTCOME.SUCCESS)
   })
 })
 
@@ -185,7 +187,9 @@ describe('attempt-login — authentication failures', () => {
       stableIdGen, hour, 'k', policy, allowStore(), sink, stableClock,
     )
     expect(events.length).toBe(1)
-    expect(events[0].outcome).toBe(OUTCOME.FAILURE)
+    const event = events[0]
+    if (event === undefined) throw new Error('expected auth event')
+    expect(event.outcome).toBe(OUTCOME.FAILURE)
   })
 
   it('the recorded failure event carries the subject, not the credential', async () => {
@@ -194,8 +198,10 @@ describe('attempt-login — authentication failures', () => {
       id, credential, contextFor(validPayload), rejectAll,
       stableIdGen, hour, 'k', policy, allowStore(), sink, stableClock,
     )
-    expect(events[0].subject).toBe(subject)
-    expect(JSON.stringify(events[0])).not.toContain('hunter2')
+    const event = events[0]
+    if (event === undefined) throw new Error('expected auth event')
+    expect(event.subject).toBe(subject)
+    expect(JSON.stringify(event)).not.toContain('hunter2')
   })
 
   it('records no event for an unresolvable identifier', async () => {

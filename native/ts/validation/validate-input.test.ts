@@ -50,7 +50,9 @@ describe('validate-input — failures', () => {
     expect(r.ok).toBe(false)
     if (!r.ok) {
       expect(r.error.length).toBe(1)
-      expect(r.error[0].validator).toBe('must-be-longer')
+      const failure = r.error[0]
+      if (failure === undefined) throw new Error('expected validation failure')
+      expect(failure.validator).toBe('must-be-longer')
     }
   })
 
@@ -74,7 +76,9 @@ describe('validate-input — failures', () => {
     const r = validateInput('hi', [alwaysPass, mustBeLonger, alwaysPass])
     if (r.ok) throw new Error('expected err')
     expect(r.error.length).toBe(1)
-    expect(r.error[0].validator).toBe('must-be-longer')
+    const failure = r.error[0]
+    if (failure === undefined) throw new Error('expected validation failure')
+    expect(failure.validator).toBe('must-be-longer')
   })
 
   it('the failure list is frozen', () => {
@@ -90,8 +94,10 @@ describe('validate-input — throwing validators', () => {
     expect(r.ok).toBe(false)
     if (!r.ok) {
       expect(r.error.length).toBe(1)
-      expect(r.error[0].validator).toBe('throws')
-      expect(r.error[0].reason).toContain('threw')
+      const failure = r.error[0]
+      if (failure === undefined) throw new Error('expected validation failure')
+      expect(failure.validator).toBe('throws')
+      expect(failure.reason).toContain('threw')
     }
   })
 

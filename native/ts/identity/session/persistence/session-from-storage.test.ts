@@ -3,10 +3,10 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { readFile } from 'node:fs/promises'
+import sessionSource from './session-from-storage.ts?raw'
 import { unsafeIdentifier } from '../../../primitives/identifier'
 import { fromMillis, duration, add } from '../../../primitives/timestamp'
-import { SESSION_STATE } from '../../../primitives/session'
+import { SESSION_STATE } from '../../primitives/session'
 import {
   sessionFromStorage,
   type SessionStorageRecord,
@@ -147,12 +147,8 @@ describe('session-from-storage — no active upgrade', () => {
 })
 
 describe('session-from-storage — no authentication dependency', () => {
-  it('the module does not import from the authentication flow', async () => {
-    const source = await readFile(
-      'native/ts/identity/session/persistence/session-from-storage.ts',
-      'utf8',
-    )
-    const importLines = source
+  it('the module does not import from the authentication flow', () => {
+    const importLines = sessionSource
       .split('\n')
       .filter((line) => line.trimStart().startsWith('import'))
 

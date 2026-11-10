@@ -3,9 +3,9 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { unsafeIdentifier } from './identifier'
-import { makeSubject } from './subject'
-import { fromMillis } from './timestamp'
+import { unsafeIdentifier } from '../../primitives/identifier'
+import { makeSubject } from '../../primitives/subject'
+import { fromMillis } from '../../primitives/timestamp'
 import type { Assertion } from './assertion'
 import {
   principalFromAssertion,

@@ -8,10 +8,10 @@
  * is rejected rather than throwing.
  */
 
-import { ok, err, type Result } from './result'
-import type { Subject } from './subject'
-import type { Identifier } from './identifier'
-import type { Timestamp } from './timestamp'
+import { ok, err, type Result } from '../../primitives/result'
+import type { Subject } from '../../primitives/subject'
+import type { Identifier } from '../../primitives/identifier'
+import type { Timestamp } from '../../primitives/timestamp'
 
 export interface Assertion {
   readonly subject: Subject

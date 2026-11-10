@@ -7,7 +7,7 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { readFile } from 'node:fs/promises'
+import principalSource from './principal-from-storage.ts?raw'
 import { unsafeIdentifier } from '../primitives/identifier'
 import { makeSubject } from '../primitives/subject'
 import { fromMillis } from '../primitives/timestamp'
@@ -109,13 +109,9 @@ describe('principal-from-storage — field validation', () => {
 })
 
 describe('principal-from-storage — no authentication dependency', () => {
-  it('the module does not import from the authentication flow', async () => {
-    const source = await readFile(
-      'native/ts/validation/principal-from-storage.ts',
-      'utf8',
-    )
+  it('the module does not import from the authentication flow', () => {
     // Match actual import statements, not the word in comments.
-    const importLines = source
+    const importLines = principalSource
       .split('\n')
       .filter((line) => line.trimStart().startsWith('import'))
 

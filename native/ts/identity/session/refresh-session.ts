@@ -8,11 +8,11 @@
  */
 
 import { err, type Result } from '../../primitives/result'
-import { isUsable, type Session } from '../../primitives/session'
+import { isUsable, type Session } from '../primitives/session'
 import type { Duration, Timestamp } from '../../primitives/timestamp'
-import type { AuthFailure } from '../../primitives/auth-failure'
-import { AUTH_FAILURE } from '../../primitives/auth-failure'
-import { makeSession, SESSION_STATE } from '../../primitives/session'
+import type { AuthFailure } from '../primitives/auth-failure'
+import { AUTH_FAILURE } from '../primitives/auth-failure'
+import { makeSession, SESSION_STATE } from '../primitives/session'
 import { ok } from '../../primitives/result'
 import { add } from '../../primitives/timestamp'
 

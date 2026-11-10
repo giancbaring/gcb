@@ -8,8 +8,8 @@
  */
 
 import { ok, err, type Result } from '../../primitives/result'
-import type { Principal } from '../../primitives/principal'
-import { AUTHZ_FAILURE, type AuthzFailure } from '../../primitives/authz-failure'
+import type { Principal } from '../primitives/principal'
+import { AUTHZ_FAILURE, type AuthzFailure } from '../primitives/authz-failure'
 import { permissionCheck } from './permission-check'
 
 export function authorize(

@@ -3,11 +3,11 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { isOk, isErr } from './result'
-import { unsafeIdentifier } from './identifier'
-import { makeSubject } from './subject'
-import { fromMillis } from './timestamp'
-import { OUTCOME } from './outcome'
+import { isOk, isErr } from '../../primitives/result'
+import { unsafeIdentifier } from '../../primitives/identifier'
+import { makeSubject } from '../../primitives/subject'
+import { fromMillis } from '../../primitives/timestamp'
+import { OUTCOME } from '../../primitives/outcome'
 import { AUTH_ACTION, makeAuthEvent, isAuthAction, allAuthActions } from './auth-event'
 
 function validInput() {

@@ -8,8 +8,8 @@
  */
 
 import { ok, err, type Result } from '../../primitives/result'
-import type { Principal } from '../../primitives/principal'
-import { AUTH_FAILURE, type AuthFailure } from '../../primitives/auth-failure'
+import type { Principal } from '../primitives/principal'
+import { AUTH_FAILURE, type AuthFailure } from '../primitives/auth-failure'
 
 export function permissionCheck(
   principal: Principal,

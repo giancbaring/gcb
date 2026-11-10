@@ -59,7 +59,7 @@ describe('identifier — stability', () => {
   it('value is unchanged after any read', () => {
     const id = unsafeIdentifier('GMS007')
     const before = id
-    const _ = identifiersEqual(id, id)
+    expect(identifiersEqual(id, id)).toBe(true)
     expect(id).toBe(before)
   })
 

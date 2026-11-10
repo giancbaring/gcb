@@ -15,7 +15,7 @@ import {
   isSessionState,
   type Session,
   type SessionState,
-} from '../../../primitives/session'
+} from '../../primitives/session'
 import { principalFromStorage } from '../../../validation/principal-from-storage'
 
 export interface SessionStorageRecord {

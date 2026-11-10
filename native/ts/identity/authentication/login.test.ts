@@ -2,18 +2,24 @@
  * login.test.ts — tests for the `login` composition.
  */
 
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
+import { createConsoleHistorian } from '../../devlog'
 import { unsafeIdentifier } from '../../primitives/identifier'
 import { makeSubject } from '../../primitives/subject'
-import { Credential } from '../../primitives/credential'
+import { Credential } from '../primitives/credential'
 import { Secret } from '../../primitives/secret'
-import { fromMillis, duration, toMillis } from '../../primitives/timestamp'
-import { SESSION_STATE } from '../../primitives/session'
-import { AUTH_FAILURE } from '../../primitives/auth-failure'
+import { fromMillis, duration, add, toMillis } from '../../primitives/timestamp'
+import { SESSION_STATE } from '../primitives/session'
+import { AUTH_FAILURE } from '../primitives/auth-failure'
 import type { Comparator } from './verification/compare-secret'
 import type { IdGenerator, Clock } from './assertion/issue-assertion'
 import { login } from './login'
 import type { AuthenticationContext } from './authenticate'
+
+vi.mock('../../devlog', async importOriginal => {
+  const actual = await importOriginal<typeof import('../../devlog')>()
+  return { ...actual, DEVLOG_ENABLED: true, historian: actual.noopHistorian }
+})
 
 const id = unsafeIdentifier('GMS001')
 const subject = makeSubject(id, 'human')
@@ -64,7 +70,7 @@ describe('login — happy path', () => {
     )
     if (!r.ok) throw new Error('expected ok')
     expect(toMillis(r.value.expiresAt)).toBe(
-      toMillis(r.value.createdAt) + toMillis(hour),
+      toMillis(add(r.value.createdAt, hour)),
     )
   })
 
@@ -162,5 +168,21 @@ describe('login — never throws', () => {
     await expect(
       login(id, credential, contextFor(validPayload), acceptAll, stableIdGen, duration(0), stableClock),
     ).resolves.toBeDefined()
+  })
+})
+
+describe('login — development historian', () => {
+  it('records flow entry and exit without logging the credential', async () => {
+    const lines: string[] = []
+    const logger = createConsoleHistorian({ sink: line => lines.push(line) })
+
+    await login(
+      id, credential, contextFor(validPayload), acceptAll,
+      stableIdGen, hour, stableClock, { historian: logger },
+    )
+
+    const events = lines.map(line => JSON.parse(line))
+    expect(events.map(event => event.kind)).toEqual(['flow.enter', 'flow.exit'])
+    expect(lines.every(line => !line.includes('hunter2'))).toBe(true)
   })
 })

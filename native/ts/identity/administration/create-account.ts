@@ -8,12 +8,12 @@
  */
 
 import { ok, err, type Result } from '../../primitives/result'
-import type { Principal } from '../../primitives/principal'
+import type { Principal } from '../primitives/principal'
 import type { Subject } from '../../primitives/subject'
-import type { Credential } from '../../primitives/credential'
+import type { Credential } from '../primitives/credential'
 import type { Secret } from '../../primitives/secret'
 import type { Timestamp } from '../../primitives/timestamp'
-import { AUTHZ_FAILURE, type AuthzFailure } from '../../primitives/authz-failure'
+import { AUTHZ_FAILURE, type AuthzFailure } from '../primitives/authz-failure'
 import { authorize } from '../authorization/authorize'
 import { hashCredential, type Hasher } from '../credentials/hash-credential'
 

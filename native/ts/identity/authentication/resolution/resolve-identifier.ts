@@ -10,7 +10,7 @@
 import { ok, err, type Result } from '../../../primitives/result'
 import type { Identifier } from '../../../primitives/identifier'
 import type { Subject } from '../../../primitives/subject'
-import { AUTH_FAILURE, type AuthFailure } from '../../../primitives/auth-failure'
+import { AUTH_FAILURE, type AuthFailure } from '../../primitives/auth-failure'
 
 export type Resolver = (identifier: Identifier) => Promise<Subject | null>
 

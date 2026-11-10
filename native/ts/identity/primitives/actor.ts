@@ -7,8 +7,8 @@
  * occurs, both are recorded.
  */
 
-import { ok, err, type Result } from './result'
-import type { Subject } from './subject'
+import { ok, err, type Result } from '../../primitives/result'
+import type { Subject } from '../../primitives/subject'
 
 export const ACTOR_VIA = {
   DIRECT: 'direct',

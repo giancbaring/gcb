@@ -6,8 +6,8 @@ import { describe, it, expect } from 'vitest'
 import { unsafeIdentifier } from '../../../primitives/identifier'
 import { makeSubject } from '../../../primitives/subject'
 import { fromMillis, duration, type Timestamp } from '../../../primitives/timestamp'
-import { AUTH_FAILURE } from '../../../primitives/auth-failure'
-import type { Assertion } from '../../../primitives/assertion'
+import { AUTH_FAILURE } from '../../primitives/auth-failure'
+import type { Assertion } from '../../primitives/assertion'
 import { assertionFreshness } from './assertion-freshness'
 
 const t0 = fromMillis(1_700_000_000_000)

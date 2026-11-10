@@ -3,10 +3,10 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { isOk, isErr } from './result'
-import { unsafeIdentifier } from './identifier'
-import { makeSubject } from './subject'
-import { fromMillis } from './timestamp'
+import { isOk, isErr } from '../../primitives/result'
+import { unsafeIdentifier } from '../../primitives/identifier'
+import { makeSubject } from '../../primitives/subject'
+import { fromMillis } from '../../primitives/timestamp'
 import { makeAssertion } from './assertion'
 
 const validInput = () => ({

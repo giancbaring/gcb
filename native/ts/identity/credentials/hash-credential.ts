@@ -7,9 +7,9 @@
  */
 
 import { ok, err, type Result } from '../../primitives/result'
-import type { Credential } from '../../primitives/credential'
+import type { Credential } from '../primitives/credential'
 import { Secret, type SecretStorage } from '../../primitives/secret'
-import { AUTH_FAILURE, type AuthFailure } from '../../primitives/auth-failure'
+import { AUTH_FAILURE, type AuthFailure } from '../primitives/auth-failure'
 
 /**
  * A Hasher receives the raw credential and returns a storage record.

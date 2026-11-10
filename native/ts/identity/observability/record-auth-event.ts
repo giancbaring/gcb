@@ -11,9 +11,9 @@ import {
   makeAuthEvent,
   type AuthAction,
   type AuthEvent,
-} from '../../primitives/auth-event'
-import { AUTH_FAILURE, type AuthFailure } from '../../primitives/auth-failure'
-import type { Actor } from '../../primitives/actor'
+} from '../primitives/auth-event'
+import { AUTH_FAILURE, type AuthFailure } from '../primitives/auth-failure'
+import type { Actor } from '../primitives/actor'
 import type { Outcome } from '../../primitives/outcome'
 import type { Timestamp } from '../../primitives/timestamp'
 

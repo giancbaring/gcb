@@ -11,7 +11,7 @@ import type { Timestamp, Duration } from '../../primitives/timestamp'
 import {
   RATE_LIMIT_FAILURE,
   type RateLimitFailure,
-} from '../../primitives/rate-limit-failure'
+} from '../primitives/rate-limit-failure'
 
 export type Clock = () => Timestamp
 

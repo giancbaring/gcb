@@ -15,10 +15,10 @@
  * session does not exist for them.
  */
 
-import { ok, err, type Result } from './result'
-import type { Identifier } from './identifier'
+import { ok, err, type Result } from '../../primitives/result'
+import type { Identifier } from '../../primitives/identifier'
 import type { Principal } from './principal'
-import type { Timestamp } from './timestamp'
+import type { Timestamp } from '../../primitives/timestamp'
 
 export const SESSION_STATE = {
   ACTIVE: 'active',

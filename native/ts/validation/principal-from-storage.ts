@@ -10,7 +10,7 @@
  */
 
 import { ok, err, type Result } from '../primitives/result'
-import type { Principal } from '../primitives/principal'
+import type { Principal } from '../identity/primitives/principal'
 import type { Identifier } from '../primitives/identifier'
 import type { Timestamp } from '../primitives/timestamp'
 import type { Subject } from '../primitives/subject'

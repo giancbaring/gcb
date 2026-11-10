@@ -8,14 +8,14 @@
 
 import { ok, err, type Result } from '../../primitives/result'
 import type { Identifier } from '../../primitives/identifier'
-import type { Credential } from '../../primitives/credential'
-import type { Session } from '../../primitives/session'
+import type { Credential } from '../primitives/credential'
+import type { Session } from '../primitives/session'
 import type { Duration, Timestamp } from '../../primitives/timestamp'
-import { AUTH_FAILURE, type AuthFailure } from '../../primitives/auth-failure'
-import type { RateLimitFailure } from '../../primitives/rate-limit-failure'
+import { AUTH_FAILURE, type AuthFailure } from '../primitives/auth-failure'
+import type { RateLimitFailure } from '../primitives/rate-limit-failure'
 import { OUTCOME } from '../../primitives/outcome'
-import { AUTH_ACTION } from '../../primitives/auth-event'
-import { makeActor, ACTOR_VIA } from '../../primitives/actor'
+import { AUTH_ACTION } from '../primitives/auth-event'
+import { makeActor, ACTOR_VIA } from '../primitives/actor'
 import { makeSubject, type Subject } from '../../primitives/subject'
 import type { Comparator } from './verification/compare-secret'
 import type { IdGenerator, Clock } from './assertion/issue-assertion'
@@ -43,7 +43,7 @@ async function emit(
     const actor = makeActor({ subject, via: ACTOR_VIA.DIRECT })
     if (!actor.ok) return false
 
-    const { makeAuthEvent } = await import('../../primitives/auth-event')
+    const { makeAuthEvent } = await import('../primitives/auth-event')
     const event = makeAuthEvent({
       action: AUTH_ACTION.LOGIN,
       subject,

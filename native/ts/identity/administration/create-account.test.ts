@@ -6,10 +6,10 @@ import { describe, it, expect } from 'vitest'
 import { unsafeIdentifier } from '../../primitives/identifier'
 import { makeSubject } from '../../primitives/subject'
 import { fromMillis } from '../../primitives/timestamp'
-import { Credential } from '../../primitives/credential'
+import { Credential } from '../primitives/credential'
 import { Secret } from '../../primitives/secret'
-import { principalFromAssertion, type Principal } from '../../primitives/principal'
-import { AUTHZ_FAILURE } from '../../primitives/authz-failure'
+import { principalFromAssertion, type Principal } from '../primitives/principal'
+import { AUTHZ_FAILURE } from '../primitives/authz-failure'
 import type { Hasher } from '../credentials/hash-credential'
 import {
   createAccount,
@@ -111,9 +111,11 @@ describe('create-account — permitted', () => {
       stableHasher,
       fixedClock,
     )
-    expect(writes[0].subject).toBe(target)
-    expect(writes[0].secret.reveal().algorithm).toBe('argon2id')
-    expect(writes[0].authority).toEqual(['OFFICER', 'ADVISER'])
+    const write = writes[0]
+    if (write === undefined) throw new Error('expected account sink write')
+    expect(write.subject).toBe(target)
+    expect(write.secret.reveal().algorithm).toBe('argon2id')
+    expect(write.authority).toEqual(['OFFICER', 'ADVISER'])
   })
 
   it('the authority list reaches the sink frozen', async () => {
@@ -127,7 +129,9 @@ describe('create-account — permitted', () => {
       stableHasher,
       fixedClock,
     )
-    expect(Object.isFrozen(writes[0].authority)).toBe(true)
+    const write = writes[0]
+    if (write === undefined) throw new Error('expected account sink write')
+    expect(Object.isFrozen(write.authority)).toBe(true)
   })
 
   it('the credential never reaches the sink in plaintext', async () => {
@@ -141,7 +145,9 @@ describe('create-account — permitted', () => {
       stableHasher,
       fixedClock,
     )
-    const serialized = JSON.stringify(writes[0].secret.reveal())
+    const write = writes[0]
+    if (write === undefined) throw new Error('expected account sink write')
+    const serialized = JSON.stringify(write.secret.reveal())
     expect(serialized).not.toContain('initial-password')
   })
 

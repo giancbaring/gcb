@@ -5,13 +5,13 @@
 import { describe, it, expect } from 'vitest'
 import { unsafeIdentifier } from '../../primitives/identifier'
 import { makeSubject } from '../../primitives/subject'
-import { Credential } from '../../primitives/credential'
+import { Credential } from '../primitives/credential'
 import { Secret } from '../../primitives/secret'
 import { fromMillis } from '../../primitives/timestamp'
-import { AUTH_FAILURE } from '../../primitives/auth-failure'
+import { AUTH_FAILURE } from '../primitives/auth-failure'
 import { OUTCOME } from '../../primitives/outcome'
-import { makeResetToken, type KeyedResetToken } from '../../primitives/reset-token'
-import type { AuthEvent } from '../../primitives/auth-event'
+import { makeResetToken, type KeyedResetToken } from '../primitives/reset-token'
+import type { AuthEvent } from '../primitives/auth-event'
 import type { Hasher } from './hash-credential'
 import type { AuthEventSink } from '../observability/record-auth-event'
 import {
@@ -118,8 +118,10 @@ describe('reset-credential — happy path', () => {
       stableHasher,
       fixedClock,
     )
-    expect(writes[0].subject).toBe(subject)
-    expect(writes[0].secret.reveal().algorithm).toBe('argon2id')
+    const write = writes[0]
+    if (write === undefined) throw new Error('expected credential sink write')
+    expect(write.subject).toBe(subject)
+    expect(write.secret.reveal().algorithm).toBe('argon2id')
   })
 
   it('the credential never reaches the sink in plaintext', async () => {
@@ -134,7 +136,9 @@ describe('reset-credential — happy path', () => {
       stableHasher,
       fixedClock,
     )
-    expect(JSON.stringify(writes[0].secret.reveal())).not.toContain('new-password')
+    const write = writes[0]
+    if (write === undefined) throw new Error('expected credential sink write')
+    expect(JSON.stringify(write.secret.reveal())).not.toContain('new-password')
   })
 
   it('a SUCCESS auth event is recorded', async () => {
@@ -150,7 +154,9 @@ describe('reset-credential — happy path', () => {
       fixedClock,
     )
     expect(events.length).toBe(1)
-    expect(events[0].outcome).toBe(OUTCOME.SUCCESS)
+    const event = events[0]
+    if (event === undefined) throw new Error('expected auth event')
+    expect(event.outcome).toBe(OUTCOME.SUCCESS)
   })
 })
 
@@ -322,7 +328,9 @@ describe('reset-credential — hasher failure after consumption', () => {
       fixedClock,
     )
     expect(events.length).toBe(1)
-    expect(events[0].outcome).toBe(OUTCOME.ERROR)
+    const event = events[0]
+    if (event === undefined) throw new Error('expected auth event')
+    expect(event.outcome).toBe(OUTCOME.ERROR)
   })
 })
 
@@ -364,7 +372,9 @@ describe('reset-credential — sink failure', () => {
       fixedClock,
     )
     expect(events.length).toBe(1)
-    expect(events[0].outcome).toBe(OUTCOME.ERROR)
+    const event = events[0]
+    if (event === undefined) throw new Error('expected auth event')
+    expect(event.outcome).toBe(OUTCOME.ERROR)
   })
 
   it('returns Err INTERNAL when the audit sink throws', async () => {

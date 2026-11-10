@@ -5,10 +5,10 @@
 import { describe, it, expect } from 'vitest'
 import { unsafeIdentifier } from '../../../primitives/identifier'
 import { makeSubject } from '../../../primitives/subject'
-import { fromMillis, duration, toMillis } from '../../../primitives/timestamp'
-import { SESSION_STATE } from '../../../primitives/session'
-import { AUTH_FAILURE } from '../../../primitives/auth-failure'
-import type { Assertion } from '../../../primitives/assertion'
+import { fromMillis, duration, add, toMillis } from '../../../primitives/timestamp'
+import { SESSION_STATE } from '../../primitives/session'
+import { AUTH_FAILURE } from '../../primitives/auth-failure'
+import type { Assertion } from '../../primitives/assertion'
 import { createSession } from './create-session'
 
 const subject = makeSubject(unsafeIdentifier('GMS001'), 'human')
@@ -39,7 +39,7 @@ describe('create-session — happy path', () => {
     const r = createSession(assertion, hour, fixedClock)
     if (!r.ok) throw new Error('expected ok')
     expect(toMillis(r.value.expiresAt)).toBe(
-      toMillis(r.value.createdAt) + toMillis(hour),
+      toMillis(add(r.value.createdAt, hour)),
     )
   })
 
@@ -82,7 +82,7 @@ describe('create-session — clock', () => {
     const r = createSession(assertion, hour, customClock)
     if (!r.ok) throw new Error('expected ok')
     expect(toMillis(r.value.createdAt)).toBe(1)
-    expect(toMillis(r.value.expiresAt)).toBe(1 + toMillis(hour))
+    expect(toMillis(r.value.expiresAt)).toBe(toMillis(add(fromMillis(1), hour)))
   })
 })
 

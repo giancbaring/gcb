@@ -5,9 +5,9 @@
 import { describe, it, expect } from 'vitest'
 import { unsafeIdentifier } from '../../primitives/identifier'
 import { makeSubject } from '../../primitives/subject'
-import { Credential } from '../../primitives/credential'
+import { Credential } from '../primitives/credential'
 import { Secret } from '../../primitives/secret'
-import { AUTH_FAILURE } from '../../primitives/auth-failure'
+import { AUTH_FAILURE } from '../primitives/auth-failure'
 import type { Comparator } from '../authentication/verification/compare-secret'
 import type { Hasher } from './hash-credential'
 import {
@@ -72,8 +72,10 @@ describe('change-credential — happy path', () => {
       id, oldCred, newCred, contextFor(validPayload),
       acceptAll, stableHasher, sink,
     )
-    expect(writes[0].subject).toBe(subject)
-    expect(writes[0].secret.reveal().hash).toBe('hashed:new-password')
+    const write = writes[0]
+    if (write === undefined) throw new Error('expected credential sink write')
+    expect(write.subject).toBe(subject)
+    expect(write.secret.reveal().hash).toBe('hashed:new-password')
   })
 
   it('the hasher receives the new credential, not the old one', async () => {

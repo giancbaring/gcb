@@ -9,10 +9,10 @@
 
 import { ok, err, type Result } from '../../../primitives/result'
 import type { Identifier } from '../../../primitives/identifier'
-import type { Credential } from '../../../primitives/credential'
+import type { Credential } from '../../primitives/credential'
 import type { Secret } from '../../../primitives/secret'
 import type { Subject } from '../../../primitives/subject'
-import { AUTH_FAILURE, type AuthFailure } from '../../../primitives/auth-failure'
+import { AUTH_FAILURE, type AuthFailure } from '../../primitives/auth-failure'
 import { compareSecret, type Comparator } from './compare-secret'
 
 /**

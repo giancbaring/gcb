@@ -6,7 +6,7 @@ import { describe, it, expect } from 'vitest'
 import { fromMillis, duration } from '../../primitives/timestamp'
 import {
   RATE_LIMIT_FAILURE,
-} from '../../primitives/rate-limit-failure'
+} from '../primitives/rate-limit-failure'
 import {
   rateLimit,
   type RateLimitPolicy,

@@ -3,8 +3,8 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { Credential } from '../../primitives/credential'
-import { AUTH_FAILURE } from '../../primitives/auth-failure'
+import { Credential } from '../primitives/credential'
+import { AUTH_FAILURE } from '../primitives/auth-failure'
 import { hashCredential, type Hasher } from './hash-credential'
 
 const cred = Credential.fromRaw('hunter2')

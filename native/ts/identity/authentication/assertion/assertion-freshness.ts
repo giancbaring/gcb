@@ -8,10 +8,10 @@
  */
 
 import { ok, err, type Result } from '../../../primitives/result'
-import type { Assertion } from '../../../primitives/assertion'
+import type { Assertion } from '../../primitives/assertion'
 import type { Duration, Timestamp } from '../../../primitives/timestamp'
-import { toMillis } from '../../../primitives/timestamp'
-import { AUTH_FAILURE, type AuthFailure } from '../../../primitives/auth-failure'
+import { diff } from '../../../primitives/timestamp'
+import { AUTH_FAILURE, type AuthFailure } from '../../primitives/auth-failure'
 
 export type Clock = () => Timestamp
 
@@ -25,13 +25,13 @@ export function assertionFreshness(
   }
 
   const now = clock()
-  const age = toMillis(now) - toMillis(assertion.issuedAt)
+  const age = diff(now, assertion.issuedAt)
 
   if (age < 0) {
     return err(AUTH_FAILURE.EXPIRED)
   }
 
-  if (age >= toMillis(maxAge)) {
+  if (age >= maxAge) {
     return err(AUTH_FAILURE.EXPIRED)
   }
 

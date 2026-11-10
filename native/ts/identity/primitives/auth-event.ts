@@ -6,11 +6,11 @@
  * immutable, append-only, and carries no sensitive material.
  */
 
-import { ok, err, type Result } from './result'
-import type { Subject } from './subject'
-import type { Outcome } from './outcome'
-import type { Timestamp } from './timestamp'
-import { isOutcome } from './outcome'
+import { ok, err, type Result } from '../../primitives/result'
+import type { Subject } from '../../primitives/subject'
+import type { Outcome } from '../../primitives/outcome'
+import type { Timestamp } from '../../primitives/timestamp'
+import { isOutcome } from '../../primitives/outcome'
 
 export const AUTH_ACTION = {
   LOGIN: 'login',
