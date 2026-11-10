@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GCB Contract Index</title>
+  <style>
+    :root { color-scheme: light; font-family: "Segoe UI", ui-sans-serif, sans-serif; color: #171923; background: #fff; --accent: #4d6bfe; --line: #e3e6ed; --muted: #646b7b; --panel: #f7f8fb; --valid: #edf4ff; --error: #752b28; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 320px; min-height: 100vh; }
+    button, input { font: inherit; }
+    button { color: inherit; }
+    .app { min-height: 100vh; display: grid; grid-template-columns: 300px minmax(0, 1fr); }
+    aside { border-right: 1px solid var(--line); min-height: 100vh; display: flex; flex-direction: column; }
+    .brand { padding: 22px 20px 16px; border-bottom: 1px solid var(--line); }
+    .brand h1 { font-size: 18px; margin: 0; font-weight: 700; }
+    .brand p { color: var(--muted); font-size: 12px; margin: 7px 0 0; }
+    .search-wrap { padding: 14px 14px 8px; }
+    .search-wrap input { width: 100%; border: 1px solid #d9deea; border-radius: 6px; padding: 10px 11px; outline: none; }
+    .search-wrap input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px #4d6bfe22; }
+    .status-filter { padding: 4px 14px 10px; display: grid; gap: 5px; color: var(--muted); font-size: 11px; }
+    .status-filter select { width: 100%; border: 1px solid #d9deea; border-radius: 5px; padding: 8px; background: #fff; color: #171923; }
+    .contract-list { padding: 4px 8px 18px; overflow: auto; flex: 1; }
+    .domain-heading { margin: 14px 10px 6px; color: var(--muted); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
+    .contract-button { width: 100%; display: flex; align-items: center; justify-content: space-between; text-align: left; border: 0; background: transparent; padding: 8px 10px; border-radius: 5px; cursor: pointer; font-size: 13px; }
+    .contract-button:hover { background: var(--panel); }
+    .contract-button.status-valid { background: var(--valid); box-shadow: inset 3px 0 #78a6e8; }
+    .contract-button.status-error { background: var(--error); color: #fff; box-shadow: inset 3px 0 #35100e; }
+    .contract-button.status-error .kind { color: #f2d5d2; }
+    .contract-button[aria-current="true"] { color: #2948da; background: #edf0ff; font-weight: 600; }
+    .kind { color: var(--muted); font-size: 10px; margin-left: 8px; white-space: nowrap; }
+    main { min-width: 0; }
+    .topbar { display: flex; align-items: center; gap: 8px; padding: 16px 24px; border-bottom: 1px solid var(--line); min-height: 62px; }
+    .topbar button, .diag-tabs button { border: 1px solid transparent; background: transparent; border-radius: 5px; padding: 8px 11px; cursor: pointer; color: var(--muted); font-size: 13px; }
+    .topbar button:hover, .diag-tabs button:hover { background: var(--panel); color: #171923; }
+    .topbar button[aria-pressed="true"], .diag-tabs button[aria-pressed="true"] { color: #2948da; border-color: #d9dfff; background: #f0f2ff; }
+    .summary-chip { margin-left: auto; color: var(--muted); font-size: 12px; }
+    .content { padding: 28px clamp(18px, 4vw, 52px); max-width: 1280px; margin: 0 auto; }
+    .eyebrow { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; font-weight: 700; }
+    h2 { font-size: 26px; margin: 7px 0 6px; overflow-wrap: anywhere; }
+    .subtitle { color: var(--muted); font-size: 13px; margin: 0 0 24px; overflow-wrap: anywhere; }
+    .section { border-top: 1px solid var(--line); padding: 20px 0; }
+    .section h3 { font-size: 14px; margin: 0 0 12px; }
+    .meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 22px; margin: 0; }
+    .meta div { min-width: 0; }
+    .meta dt { color: var(--muted); font-size: 11px; margin-bottom: 4px; }
+    .meta dd { margin: 0; font-size: 13px; overflow-wrap: anywhere; }
+    .edge-list { display: flex; flex-wrap: wrap; gap: 7px; }
+    .edge-link { border: 1px solid #d9deea; background: #fff; color: #344cc4; border-radius: 4px; padding: 6px 9px; cursor: pointer; font-size: 12px; }
+    .edge-link:hover { border-color: var(--accent); background: #f4f6ff; }
+    .empty { color: var(--muted); font-size: 13px; }
+    pre { overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; margin: 0; padding: 14px; border: 1px solid var(--line); background: var(--panel); border-radius: 5px; font: 12px/1.55 ui-monospace, Consolas, monospace; }
+    .graph-wrap { overflow: auto; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
+    svg { display: block; min-width: 740px; width: 100%; height: auto; }
+    .edge-line { stroke: #aeb7d0; stroke-width: 1.5; }
+    .graph-node rect { fill: #f5f6fa; stroke: #cfd5e3; rx: 5; }
+    .graph-node.selected rect { fill: #edf0ff; stroke: var(--accent); stroke-width: 2; }
+    .graph-node.missing rect { fill: #fff5f2; stroke: #ce6147; stroke-dasharray: 4 3; }
+    .graph-node { cursor: pointer; }
+    .graph-node text { font-size: 12px; fill: #171923; pointer-events: none; }
+    .graph-label { font-size: 11px; fill: #646b7b; }
+    .diag-tabs { display: flex; flex-wrap: wrap; gap: 4px; margin: 18px 0; }
+    .diag-tabs button { border-color: var(--line); }
+    .diag-row { padding: 13px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+    .diag-row strong { color: #22283b; }
+    .diag-row p { color: var(--muted); margin: 5px 0 0; overflow-wrap: anywhere; }
+    .diag-row button { border: 0; background: transparent; color: #344cc4; text-decoration: underline; cursor: pointer; padding: 0; }
+    @media (max-width: 720px) {
+      .app { grid-template-columns: 1fr; }
+      aside { min-height: auto; max-height: 42vh; border-right: 0; border-bottom: 1px solid var(--line); }
+      .contract-list { max-height: 24vh; }
+      .topbar { padding: 12px 14px; flex-wrap: wrap; }
+      .summary-chip { width: 100%; margin-left: 0; }
+      .content { padding: 22px 16px; }
+      .meta { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside>
+      <header class="brand"><h1>GCB Index</h1><p id="index-summary"></p></header>
+      <div class="search-wrap"><input id="search" type="search" placeholder="Search contracts" aria-label="Search contracts"></div>
+      <label class="status-filter">Status<select id="status-filter" aria-label="Filter contracts by status"><option value="all">All</option><option value="valid">Valid</option><option value="error">Error</option></select></label>
+      <nav id="contract-list" class="contract-list" aria-label="Contracts"></nav>
+    </aside>
+    <main>
+      <nav class="topbar" aria-label="Views">
+        <button type="button" data-view="details" aria-pressed="true">Details</button>
+        <button type="button" data-view="graph" aria-pressed="false">Graph</button>
+        <button type="button" data-view="diagnostics" aria-pressed="false">Diagnostics</button>
+        <span id="summary-chip" class="summary-chip"></span>
+      </nav>
+      <section id="content" class="content" aria-live="polite"></section>
+    </main>
+  </div>
+  <script type="application/json" id="index-data">/*__INDEX_DATA__*/</script>
+  <script>
+    (() => {
+      const index = JSON.parse(document.getElementById('index-data').textContent);
+      const contracts = index.contracts;
+      const byId = new Map(contracts.map(contract => [contract.id, contract]));
+      const exportErrors = index.diagnostics.exportErrors.map(item => ({
+        id: item.path.split('/').pop().replace(/\.cue$/, ''),
+        kind: 'unknown',
+        domain: 'export errors',
+        status: 'error',
+        sourcePath: item.path,
+      }));
+      const listContracts = [...contracts, ...exportErrors];
+      const list = document.getElementById('contract-list');
+      const content = document.getElementById('content');
+      const search = document.getElementById('search');
+      const statusFilter = document.getElementById('status-filter');
+      const counts = index.summary;
+      let selectedId = listContracts[0]?.id || '';
+      let view = 'details';
+      let diagnosticCategory = 'exportErrors';
+
+      document.getElementById('index-summary').textContent = `${counts.indexed} indexed · ${counts.total} source files`;
+      document.getElementById('summary-chip').textContent = `${counts.indexed} valid · ${counts.error} error · ${counts.total} total`;
+
+      function make(tag, className, text) {
+        const element = document.createElement(tag);
+        if (className) element.className = className;
+        if (text !== undefined) element.textContent = text;
+        return element;
+      }
+
+      function renderList() {
+        list.replaceChildren();
+        const query = search.value.trim().toLowerCase();
+        const visible = listContracts.filter(contract => {
+          const statusMatches = statusFilter.value === 'all' || contract.status === statusFilter.value;
+          return statusMatches && `${contract.id} ${contract.kind} ${contract.domain} ${contract.sourcePath}`.toLowerCase().includes(query);
+        });
+        const domains = [...new Set(visible.map(contract => contract.domain))].sort();
+        for (const domain of domains) {
+          list.append(make('h2', 'domain-heading', domain));
+          for (const contract of visible.filter(item => item.domain === domain)) {
+            const button = make('button', `contract-button status-${contract.status}`);
+            button.type = 'button';
+            button.dataset.go = contract.id;
+            button.setAttribute('aria-current', String(contract.id === selectedId));
+            button.append(make('span', '', contract.id), make('span', 'kind', contract.kind));
+            list.append(button);
+          }
+        }
+        if (!visible.length) list.append(make('p', 'empty', 'No matching contracts.'));
+      }
+
+      function renderMeta(contract) {
+        const grid = make('dl', 'meta');
+        const fields = [['Kind', contract.kind], ['Domain', contract.domain], ['Status', contract.status], ['Source', contract.sourcePath]];
+        if (Object.hasOwn(contract, 'api')) fields.push(['API', contract.api]);
+        if (Object.hasOwn(contract, 'module')) fields.push(['Module', contract.module]);
+        for (const [label, value] of fields) {
+          const pair = make('div');
+          pair.append(make('dt', '', label), make('dd', '', value));
+          grid.append(pair);
+        }
+        return grid;
+      }
+
+      function renderEdges(title, ids) {
+        const section = make('section', 'section');
+        section.append(make('h3', '', title));
+        if (!ids.length) section.append(make('p', 'empty', 'None'));
+        else {
+          const edges = make('div', 'edge-list');
+          for (const id of ids) {
+            const button = make('button', 'edge-link', id);
+            button.type = 'button';
+            button.dataset.go = id;
+            edges.append(button);
+          }
+          section.append(edges);
+        }
+        return section;
+      }
+
+      function renderDetails() {
+        const contract = byId.get(selectedId);
+        if (!contract) {
+          const source = listContracts.find(item => item.id === selectedId);
+          const diagnostic = index.diagnostics.exportErrors.find(item => item.path === source?.sourcePath);
+          if (!source || !diagnostic) { content.append(make('p', 'empty', 'Select a contract from the list.')); return; }
+          content.append(make('div', 'eyebrow', 'error'), make('h2', '', source.id), make('p', 'subtitle', source.sourcePath));
+          const section = make('section', 'section');
+          section.append(make('h3', '', 'CUE export error'), make('pre', '', diagnostic.error));
+          content.append(section);
+          return;
+        }
+        content.append(make('div', 'eyebrow', contract.domain), make('h2', '', contract.id), make('p', 'subtitle', `${contract.status} · ${contract.sourcePath}`));
+        const metadata = make('section', 'section');
+        metadata.append(make('h3', '', 'Contract'), renderMeta(contract));
+        content.append(metadata, renderEdges('Requires', contract.requires), renderEdges('Required by', contract.requiredBy));
+        if (contract.interface) {
+          const section = make('section', 'section');
+          section.append(make('h3', '', 'Interface'), make('pre', '', JSON.stringify(contract.interface, null, 2)));
+          content.append(section);
+        }
+      }
+
+      function renderGraph() {
+        const contract = byId.get(selectedId);
+        if (!contract) { content.append(make('p', 'empty', 'Select a contract from the list.')); return; }
+        content.append(make('div', 'eyebrow', 'Dependency neighborhood'), make('h2', '', contract.id), make('p', 'subtitle', 'Select a connected contract to navigate.'));
+        const maxRows = Math.max(contract.requires.length, contract.requiredBy.length, 1);
+        const height = Math.max(460, 100 + maxRows * 72);
+        const centerY = height / 2;
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('viewBox', `0 0 960 ${height}`);
+        const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        const line = (x1, y1, x2, y2) => {
+          const element = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          element.setAttribute('x1', x1); element.setAttribute('y1', y1); element.setAttribute('x2', x2); element.setAttribute('y2', y2); element.setAttribute('class', 'edge-line');
+          group.append(element);
+        };
+        const graphNode = (x, y, id, selected, exists) => {
+          const node = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+          node.setAttribute('class', `graph-node${selected ? ' selected' : ''}${exists ? '' : ' missing'}`);
+          if (exists) node.dataset.go = id;
+          const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+          rect.setAttribute('x', x - 115); rect.setAttribute('y', y - 19); rect.setAttribute('width', 230); rect.setAttribute('height', 38);
+          const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          text.setAttribute('x', x); text.setAttribute('y', y + 4); text.setAttribute('text-anchor', 'middle'); text.textContent = id;
+          node.append(rect, text); group.append(node);
+        };
+        const ys = count => Array.from({ length: count }, (_, i) => 50 + i * ((height - 100) / Math.max(count - 1, 1)));
+        const leftY = ys(contract.requires.length), rightY = ys(contract.requiredBy.length);
+        contract.requires.forEach((id, i) => { line(365, centerY, 285, leftY[i]); graphNode(170, leftY[i], id, false, byId.has(id)); });
+        contract.requiredBy.forEach((id, i) => { line(595, centerY, 675, rightY[i]); graphNode(790, rightY[i], id, false, byId.has(id)); });
+        graphNode(480, centerY, contract.id, true, true);
+        const leftLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        leftLabel.setAttribute('x', 170); leftLabel.setAttribute('y', 25); leftLabel.setAttribute('text-anchor', 'middle'); leftLabel.setAttribute('class', 'graph-label'); leftLabel.textContent = 'REQUIRES';
+        const rightLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        rightLabel.setAttribute('x', 790); rightLabel.setAttribute('y', 25); rightLabel.setAttribute('text-anchor', 'middle'); rightLabel.setAttribute('class', 'graph-label'); rightLabel.textContent = 'REQUIRED BY';
+        group.append(leftLabel, rightLabel); svg.append(group);
+        const wrap = make('div', 'graph-wrap'); wrap.append(svg); content.append(wrap);
+      }
+
+      function renderDiagnostics() {
+        content.append(make('div', 'eyebrow', 'Index validation'), make('h2', '', 'Diagnostics'));
+        const tabs = make('nav', 'diag-tabs');
+        for (const [key, label] of [['exportErrors', 'CUE export errors'], ['brokenEdges', 'Broken edges'], ['bucketMismatches', 'Bucket mismatches'], ['cycles', 'Cycles'], ['orphans', 'Orphans']]) {
+          const button = make('button', '', `${label} (${index.diagnostics[key].length})`);
+          button.type = 'button'; button.dataset.diagnostic = key; button.setAttribute('aria-pressed', String(key === diagnosticCategory)); tabs.append(button);
+        }
+        content.append(tabs);
+        const rows = index.diagnostics[diagnosticCategory];
+        if (!rows.length) { content.append(make('p', 'empty', 'No findings in this category.')); return; }
+        for (const item of rows) {
+          const row = make('article', 'diag-row');
+          if (diagnosticCategory === 'exportErrors') {
+            row.append(make('strong', '', item.path), make('p', '', item.error));
+          } else if (diagnosticCategory === 'brokenEdges') {
+            row.append(make('strong', '', `${item.from} requires ${item.to}`), make('p', '', `Bucket: ${item.bucket}`));
+          } else if (diagnosticCategory === 'bucketMismatches') {
+            row.append(make('strong', '', `${item.from} → ${item.to}`), make('p', '', `${item.declaredBucket} points to kind ${item.actualKind}`));
+          } else if (diagnosticCategory === 'cycles') {
+            row.append(make('strong', '', item.join(' → ')));
+          } else {
+            row.append(make('strong', '', item));
+          }
+          content.append(row);
+        }
+      }
+
+      function render() {
+        content.replaceChildren();
+        document.querySelectorAll('[data-view]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.view === view)));
+        renderList();
+        if (view === 'details') renderDetails();
+        else if (view === 'graph') renderGraph();
+        else renderDiagnostics();
+      }
+
+      document.addEventListener('click', event => {
+        const target = event.target.closest('button, [data-go]');
+        if (!target) return;
+        if (target.dataset.go) { selectedId = target.dataset.go; view = 'details'; render(); return; }
+        if (target.dataset.view) { view = target.dataset.view; render(); return; }
+        if (target.dataset.diagnostic) { diagnosticCategory = target.dataset.diagnostic; render(); }
+      });
+      search.addEventListener('input', renderList);
+      statusFilter.addEventListener('change', renderList);
+      render();
+    })();
+  </script>
+</body>
+</html>
