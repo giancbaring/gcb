@@ -1,0 +1,96 @@
+package authorization
+import "gcb.example/core/core/schema"
+
+requireAuthority: schema.#Composition & {
+	kind:    "composition"
+	id:      "require-authority"
+	version: "1.0.0"
+	domain:  "identity"
+	module:  "authorization"
+	api:     "identity-authorization"
+	description: """
+		A guard that runs a supplied action only when a principal carries a required authority token. If authority is present, the action runs and its return value passes through. If absent, the action never runs and Err FORBIDDEN is returned. The action may be synchronous or asynchronous; the guard handles both.
+
+		"""
+	interface: {
+		inputs: [{
+			name: "principal", type: "Principal", required: true
+		}, {
+			name: "action_token", type: "string", required: true
+		}, {
+			name: "action", type: "() => T | Promise<T>", required: true
+		}]
+		outputs: [{type: "Result<T, AuthzFailure> | Promise<Result<T, AuthzFailure>>"}]
+	}
+	depends_on: {
+		primitives: [
+			"result",
+			"principal",
+			"authz-failure",
+		]
+		compositions: ["authorize"]
+	}
+	invariants: [
+		"The action never runs when authority is absent.",
+		"The action's return value is carried unchanged in Ok.",
+		"The action's exceptions become Err INTERNAL — they do not escape.",
+		"A missing principal returns Err NO_PRINCIPAL, not FORBIDDEN.",
+		"An empty action_token returns Err UNKNOWN_ACTION.",
+		"Never throws for any input combination.",
+	]
+	threats: [{
+		id:   "T1"
+		name: "Forgotten authorization check"
+		mitigation: """
+			The guard wraps the action. A caller who uses require-authority cannot accidentally run the action without a check, because the action is only invoked on the Ok branch of authorize.
+
+			"""
+	}, {
+		id:   "T2"
+		name: "Action exception escaping as internal error"
+		mitigation: """
+			An action that throws is caught and returned as Err INTERNAL. A partial result cannot escape.
+
+			"""
+	}, {
+		id:   "T3"
+		name: "Token substitution"
+		mitigation: """
+			action_token is passed to authorize unchanged. Normalization and prefixing are the caller's concern.
+
+			"""
+	}, {
+		id:   "T4"
+		name: "Partial side effects on denial"
+		mitigation: """
+			The action is not invoked on the deny path. No side effect occurs before authority is confirmed.
+
+			"""
+	}]
+	bindings: "gms-governance": actions: "declared in the PSO"
+	tests: [{
+		given:  "a principal carrying the token and a synchronous action"
+		expect: "Ok carrying the action's return value"
+	}, {
+		given:  "a principal carrying the token and an async action"
+		expect: "a Promise resolving to Ok with the action's return value"
+	}, {
+		given:  "a principal lacking the token"
+		expect: "Err FORBIDDEN; the action is not invoked"
+	}, {
+		given:  "a missing principal"
+		expect: "Err NO_PRINCIPAL; the action is not invoked"
+	}, {
+		given:  "an empty action token"
+		expect: "Err UNKNOWN_ACTION; the action is not invoked"
+	}, {
+		given:  "an action that throws"
+		expect: "Err INTERNAL; the exception does not escape"
+	}, {
+		given:  "an async action that rejects"
+		expect: "a Promise resolving to Err INTERNAL"
+	}, {
+		given:  "any denial"
+		expect: "the action is never invoked"
+	}]
+}

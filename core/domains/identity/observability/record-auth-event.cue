@@ -1,0 +1,115 @@
+package observability
+import "gcb.example/core/core/schema"
+
+recordAuthEvent: schema.#Composition & {
+	kind:    "composition"
+	id:      "record-auth-event"
+	version: "1.0.0"
+	domain:  "identity"
+	api:     "identity-observability"
+	description: """
+		Construct and append exactly one immutable AuthEvent for an identity operation. The actor's subject is recorded as the event subject. Event construction, clock access, and sink failure are contained as INTERNAL authentication failures; sink error text is never returned.
+
+		"""
+	interface: {
+		inputs: [{
+			name: "action", type: "AuthAction", required: true
+		}, {
+			name: "actor", type: "Actor", required: true
+		}, {
+			name: "outcome", type: "Outcome", required: true
+		}, {
+			name: "detail", type: "Record<string, string>", required: false
+		}, {
+			name: "sink", type: "AuthEventSink", required: true
+		}, {
+			name: "clock", type: "() => Timestamp", required: true
+		}]
+		outputs: [{type: "Result<AuthEvent, AuthFailure>"}]
+	}
+	depends_on: primitives: [
+		"result",
+		"auth-event",
+		"auth-failure",
+		"actor",
+		"outcome",
+		"timestamp",
+	]
+	invariants: [
+		"The actor's subject is the subject carried by the constructed AuthEvent.",
+		"A valid invocation constructs one immutable AuthEvent and appends it once.",
+		"The action, outcome, occurredAt, and detail are preserved in the event.",
+		"AuthEvent and its detail map are frozen before the sink receives them.",
+		"A throwing or rejecting sink returns Err INTERNAL and never leaks its error text.",
+		"A throwing clock or invalid event input returns Err INTERNAL.",
+		"Every failure is returned as Err. This composition never throws.",
+	]
+	threats: [{
+		id:   "T1"
+		name: "Silent audit failure"
+		mitigation: """
+			The sink is called exactly once for a valid event. Sink failure is returned as INTERNAL so the caller can apply its audit policy.
+
+			"""
+	}, {
+		id:   "T2"
+		name: "Event mutation after construction"
+		mitigation: """
+			makeAuthEvent freezes the event and its detail map before append.
+
+			"""
+	}, {
+		id:   "T3"
+		name: "Sensitive error disclosure"
+		mitigation: """
+			Sink and construction error text is not returned to the caller. Only the closed INTERNAL failure is exposed.
+
+			"""
+	}, {
+		id:   "T4"
+		name: "Incorrect event attribution"
+		mitigation: """
+			The event subject is taken from the supplied Actor, so the operation is attributed to the actor subject at the composition boundary.
+
+			"""
+	}, {
+		id:   "T5"
+		name: "Missing audit trail"
+		mitigation: """
+			Authentication and authorization compositions depend on this unit to append the event for every attempt they are required to record.
+
+			"""
+	}]
+	bindings: "gms-governance": {
+		event_sink: "appends immutable rows to the append-only auth_events store"
+		clock:      "trusted application clock"
+	}
+	tests: [{
+		given:  "valid action, actor, outcome, sink, and clock"
+		expect: "Ok carrying the constructed AuthEvent"
+	}, {
+		given:  "a valid invocation"
+		expect: "the sink is called exactly once"
+	}, {
+		given:  "a valid invocation"
+		expect: "subject, action, outcome, and occurredAt match the inputs"
+	}, {
+		given:  "a constructed event"
+		expect: "the event and detail map are frozen"
+	}, {
+		given:  "detail values"
+		expect: "detail passes through unchanged"
+	}, {
+		given:  "a sink that throws"
+		expect: "Err INTERNAL"
+	}, {
+		given:  "a sink that rejects asynchronously"
+		expect: "Err INTERNAL"
+	}, {
+		given:  "a sink failure"
+		expect: "the sink error text is not propagated"
+	}, {
+		given:  "any input"
+		expect: "the composition never throws"
+	}]
+}

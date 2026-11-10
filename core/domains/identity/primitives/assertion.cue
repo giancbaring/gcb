@@ -1,0 +1,84 @@
+package primitives
+import "gcb.example/core/core/schema"
+
+assertion: schema.#Primitive & {
+	kind:    "primitive"
+	id:      "assertion"
+	version: "1.0.0"
+	domain:  "foundation"
+	description: """
+		A verified claim of identity. An Assertion is what the authentication flow produces after a Credential has been successfully verified against a Secret. It carries the authenticated Subject, the session identifier assigned by the auth flow, the authority tokens granted, and the instant of issuance. It is the input to Principal construction and to Session creation — nothing else may produce one.
+
+		"""
+	shape: {
+		type: "record"
+		fields: [{
+			name:     "subject"
+			type:     "Subject"
+			required: true
+		}, {
+			name:     "session_id"
+			type:     "Identifier"
+			required: true
+		}, {
+			name:     "authority"
+			type:     "array<string>"
+			required: true
+		}, {
+			name:     "issued_at"
+			type:     "Timestamp"
+			required: true
+		}]
+	}
+	invariants: [
+		"An Assertion is produced only by the authentication flow. No external input is trusted.",
+		"An Assertion is immutable. Reading it produces no mutation.",
+		"Every field is required. There is no partial or anonymous assertion.",
+		"An Assertion's authority list contains only strings; the primitive does not interpret values.",
+	]
+	threats: [{
+		id:   "T1"
+		name: "Forgery by external callers"
+		mitigation: """
+			Construction is via makeAssertion, which validates the shape. The authority flow is the only legitimate producer, but the primitive itself defends against malformed input.
+
+			"""
+	}, {
+		id:   "T2"
+		name: "Replay of a captured assertion"
+		mitigation: """
+			issued_at is required. Downstream systems MAY reject assertions older than a policy threshold. Enforcement is a composition concern.
+
+			"""
+	}, {
+		id:   "T3"
+		name: "Partial assertion"
+		mitigation: """
+			Every field is required. There is no optional subject, session, or authority. A missing field fails construction.
+
+			"""
+	}, {
+		id:   "T4"
+		name: "Mutation after verification"
+		mitigation: """
+			The returned assertion is deeply frozen. Authority is a frozen array. Widening requires re-verification, producing a new assertion.
+
+			"""
+	}]
+	tests: [{
+		given:  "a well-formed assertion input"
+		expect: "makeAssertion returns Ok with a frozen Assertion"
+	}, {
+		given:  "an input missing subject"
+		expect: "makeAssertion returns Err"
+	}, {
+		given:  "an input with a non-string in authority"
+		expect: "makeAssertion returns Err"
+	}, {
+		given:  "the returned Assertion"
+		expect: "is frozen; authority array is frozen"
+	}, {
+		given:  "an assertion constructed twice from identical input"
+		expect: "both are structurally equivalent"
+	}]
+}

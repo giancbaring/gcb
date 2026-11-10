@@ -1,0 +1,93 @@
+package primitives
+import "gcb.example/core/core/schema"
+
+authFailure: schema.#Primitive & {
+	kind:    "primitive"
+	id:      "auth-failure"
+	version: "1.0.0"
+	domain:  "foundation"
+	description: """
+		A closed enumeration of the ways an authentication attempt may fail. Every authentication function returns Result<T, AuthFailure>. The primitive exists so that failure is a value, never a thrown error, and so that the caller can distinguish failure categories without the system leaking which category occurred to an untrusted party.
+
+		"""
+	shape: {
+		type: "closed-union"
+		variants: [{
+			id: "MISSING", meaning: "no credential presented"
+		}, {
+			id: "MALFORMED", meaning: "credential is structurally invalid"
+		}, {
+			id: "UNKNOWN_SUBJECT", meaning: "identifier does not resolve"
+		}, {
+			id: "MISMATCH", meaning: "credential does not match secret"
+		}, {
+			id: "EXPIRED", meaning: "credential or session has lapsed"
+		}, {
+			id: "LOCKED", meaning: "subject is administratively locked"
+		}, {
+			id: "UNVERIFIED", meaning: "subject has not confirmed their identity"
+		}, {
+			id: "INTERNAL", meaning: "a system fault prevented verification"
+		}]
+	}
+	invariants: [
+		"An AuthFailure is exactly one of the declared variants. Never more, never fewer.",
+		"The variants are closed. Adding one is a breaking change to every consumer.",
+		"An AuthFailure carries no message by default. Messages are a presentation concern.",
+		"Classification is for the system, not for the caller — see T2.",
+	]
+	threats: [{
+		id:   "T1"
+		name: "Account enumeration"
+		mitigation: """
+			toUserMessage collapses every variant except LOCKED and UNVERIFIED to a single generic string. The caller cannot distinguish UNKNOWN_SUBJECT from MISMATCH.
+
+			"""
+	}, {
+		id:   "T2"
+		name: "Information leakage via error detail"
+		mitigation: """
+			toUserMessage is the only function permitted to produce text shown to an unauthenticated caller. Its default case is generic.
+
+			"""
+	}, {
+		id:   "T3"
+		name: "Silent failure to audit"
+		mitigation: """
+			The classification is preserved internally so the audit layer can record the precise reason without exposing it to the caller.
+
+			"""
+	}, {
+		id:   "T4"
+		name: "Exception escape"
+		mitigation: """
+			No authentication function throws an AuthFailure. It is a value. A thrown exception in the auth path is a defect.
+
+			"""
+	}]
+	bindings: "gms-governance": {
+		// Presentation bindings — project-specific copy for LOCKED and UNVERIFIED.
+		LOCKED:     "Your account has been locked. Contact an administrator."
+		UNVERIFIED: "Please confirm your email address to continue."
+		generic:    "Invalid credentials."
+	}
+	tests: [{
+		given:  "every declared variant"
+		expect: "isAuthFailure returns true"
+	}, {
+		given:  "an unknown string"
+		expect: "isAuthFailure returns false"
+	}, {
+		given:  "each of MISSING, MALFORMED, UNKNOWN_SUBJECT, MISMATCH, EXPIRED, INTERNAL"
+		expect: "toUserMessage returns the same generic string"
+	}, {
+		given:  "LOCKED"
+		expect: "toUserMessage returns the LOCKED-specific message"
+	}, {
+		given:  "UNVERIFIED"
+		expect: "toUserMessage returns the UNVERIFIED-specific message"
+	}, {
+		given:  "any variant"
+		expect: "the variant id is preserved on the value"
+	}]
+}

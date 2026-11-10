@@ -1,0 +1,97 @@
+package assertion
+import "gcb.example/core/core/schema"
+
+assertionFreshness: schema.#Function & {
+	kind:    "function"
+	id:      "assertion-freshness"
+	version: "1.0.0"
+	domain:  "identity"
+	module:  "authentication/assertion"
+	api:     "identity-authentication"
+	description: """
+		Verify that an Assertion is within its acceptable age window. Every Assertion carries the instant it was issued. Downstream systems that wish to bound replay must decide how old an assertion may be before it is refused. This function answers that question.
+
+		"""
+	interface: {
+		inputs: [{
+			name: "assertion", type: "Assertion", required: true
+		}, {
+			name: "max_age", type: "Duration", required: true
+		}, {
+			name: "clock", type: "() => Timestamp", required: true
+		}]
+		outputs: [{type: "Result<Assertion, AuthFailure>"}]
+	}
+	depends_on: primitives: [
+		"result",
+		"assertion",
+		"timestamp",
+		"auth-failure",
+	]
+	invariants: [
+		"An assertion issued exactly max_age ago is expired — the boundary is exclusive.",
+		"An assertion issued in the future is expired — clock skew is not permitted.",
+		"An assertion issued at the present moment is fresh.",
+		"max_age must be strictly positive. Zero or negative returns INTERNAL.",
+		"The function never throws. Every failure is Err.",
+		"The returned Assertion is the exact input object.",
+	]
+	threats: [{
+		id:   "T1"
+		name: "Replay of a captured assertion"
+		mitigation: """
+			The caller chooses max_age. An assertion older than the window is refused with EXPIRED. An attacker who captures an assertion cannot replay it indefinitely.
+
+			"""
+	}, {
+		id:   "T2"
+		name: "Future-dated assertion"
+		mitigation: """
+			An assertion whose issuedAt is after the current instant is refused. A system with a skewed clock does not accept the assertion as valid; the caller can investigate.
+
+			"""
+	}, {
+		id:   "T3"
+		name: "Unbounded window"
+		mitigation: """
+			max_age must be strictly positive. A caller cannot disable freshness by supplying a zero or negative window.
+
+			"""
+	}, {
+		id:   "T4"
+		name: "Implicit clock"
+		mitigation: """
+			clock is a required argument. Freshness is decided by the caller's clock, not by an ambient one.
+
+			"""
+	}]
+	bindings: "gms-governance": {
+		default_max_age: "PT5M (300 seconds)"
+		clock:           "() => now()"
+	}
+	tests: [{
+		given:  "an assertion issued at the present moment"
+		expect: "Ok carrying the same assertion"
+	}, {
+		given:  "an assertion issued max_age ago exactly"
+		expect: "Err EXPIRED — the boundary is exclusive"
+	}, {
+		given:  "an assertion issued max_age minus one millisecond ago"
+		expect: "Ok"
+	}, {
+		given:  "an assertion issued one millisecond past max_age ago"
+		expect: "Err EXPIRED"
+	}, {
+		given:  "an assertion issued in the future"
+		expect: "Err EXPIRED"
+	}, {
+		given:  "a zero max_age"
+		expect: "Err INTERNAL"
+	}, {
+		given:  "a negative max_age"
+		expect: "Err INTERNAL"
+	}, {
+		given:  "the returned assertion on Ok"
+		expect: "it is the exact input object"
+	}]
+}

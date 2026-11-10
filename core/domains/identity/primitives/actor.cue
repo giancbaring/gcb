@@ -1,0 +1,88 @@
+package primitives
+import "gcb.example/core/core/schema"
+
+actor: schema.#Primitive & {
+	kind:    "primitive"
+	id:      "actor"
+	version: "1.0.0"
+	domain:  "foundation"
+	description: """
+		The entity that performed an action. An Actor is distinct from a Subject: a Subject is the entity an action is about, while an Actor is the entity that caused it. In delegation, an administrator may be the Actor while the affected user is the Subject. For direct actions, Actor and Subject are the same underlying entity.
+
+		"""
+	shape: {
+		type: "record"
+		fields: [{
+			name:     "subject"
+			type:     "Subject"
+			required: true
+		}, {
+			name:     "on_behalf_of"
+			type:     "Subject"
+			required: false
+		}, {
+			name:     "via"
+			type:     "enum<direct, delegated, system>"
+			required: true
+			default:  "direct"
+		}]
+	}
+	invariants: [
+		"An Actor is always backed by a Subject. There is no anonymous Actor.",
+		"on_behalf_of is present only when via is 'delegated'.",
+		"via is a closed set. New modes of acting require a versioned change.",
+		"An Actor is immutable after construction.",
+	]
+	threats: [{
+		id:   "T1"
+		name: "Attribution laundering"
+		mitigation: """
+			A delegated Actor carries both the acting Subject and the on_behalf_of Subject. Audit trails record both. Neither can be hidden by the other.
+
+			"""
+	}, {
+		id:   "T2"
+		name: "Anonymous action"
+		mitigation: """
+			subject is required. A system-initiated action still requires the system Subject. There is no path to an Actor with no identity.
+
+			"""
+	}, {
+		id:   "T3"
+		name: "Via laundering"
+		mitigation: """
+			via is a closed set. It cannot be widened at call sites. Adding a new mode is a schema change reviewed at the primitive level.
+
+			"""
+	}, {
+		id:   "T4"
+		name: "Direct mislabeling"
+		mitigation: """
+			A direct Actor cannot carry on_behalf_of. Delegation must be explicit. Silent reclassification is a defect.
+
+			"""
+	}]
+	bindings: "gms-governance": {
+		system_subject_identifier: "SYSTEM"
+		note:                      "System-initiated actions attribute to the SYSTEM subject."
+	}
+	tests: [{
+		given:  "an Actor with a Subject and via=direct"
+		expect: "constructed and frozen; on_behalf_of undefined"
+	}, {
+		given:  "an Actor with via=direct and on_behalf_of set"
+		expect: "rejected — delegation must be explicit"
+	}, {
+		given:  "an Actor with via=delegated and no on_behalf_of"
+		expect: "rejected — delegation requires a target subject"
+	}, {
+		given:  "an Actor with via=delegated and on_behalf_of set"
+		expect: "constructed and frozen with both subjects"
+	}, {
+		given:  "an unknown via value"
+		expect: "rejected"
+	}, {
+		given:  "an Actor with no subject"
+		expect: "rejected"
+	}]
+}

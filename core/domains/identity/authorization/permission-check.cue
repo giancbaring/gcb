@@ -1,0 +1,84 @@
+package authorization
+import "gcb.example/core/core/schema"
+
+permissionCheck: schema.#Function & {
+	kind:    "function"
+	id:      "permission-check"
+	version: "1.0.0"
+	domain:  "identity"
+	module:  "authorization"
+	api:     "identity-authorization"
+	description: """
+		Decide whether a Principal carries the authority required to perform a named action. The answer is a boolean — denial is a legitimate result, not an error. Only a system fault returns Err. The function reads authority tokens from the Principal; it does not interpret them beyond set membership.
+
+		"""
+	interface: {
+		inputs: [{
+			name: "principal", type: "Principal", required: true
+		}, {
+			name: "required", type: "string", required: true
+		}]
+		outputs: [{type: "Result<boolean, AuthFailure>"}]
+	}
+	depends_on: primitives: [
+		"result",
+		"principal",
+		"auth-failure",
+	]
+	invariants: [
+		"Denial is Ok(false). Denial is not Err.",
+		"Err is reserved for system faults — never for a legitimate denial.",
+		"The check is pure. It does not read time, storage, or ambient state.",
+		"The required token is compared by exact match. No prefix, no wildcard.",
+		"An empty authority set always yields Ok(false) for any required token.",
+	]
+	threats: [{
+		id:   "T1"
+		name: "Wildcard authority"
+		mitigation: """
+			Matching is exact. A token like 'admin:*' does not match 'admin:read'. A binding that wishes to support hierarchies must resolve them before calling this function, not inside it.
+
+			"""
+	}, {
+		id:   "T2"
+		name: "Denial treated as error"
+		mitigation: """
+			Ok(false) is a successful check whose answer is 'no'. Callers that treat denial as Err(INTERNAL) lose the ability to distinguish policy refusal from system failure in audit logs.
+
+			"""
+	}, {
+		id:   "T3"
+		name: "Privilege inference from attributes"
+		mitigation: """
+			Only authority tokens are consulted. Subject attributes play no role. A caller cannot smuggle authority through metadata.
+
+			"""
+	}, {
+		id:   "T4"
+		name: "Silent auth-failure drift"
+		mitigation: """
+			The only Err returned is INTERNAL, for cases where the principal is malformed. A malformed principal is a system fault, not a denial.
+
+			"""
+	}]
+	bindings: "gms-governance": authority_tokens: "read as role_code; actions named in the PSO"
+	tests: [{
+		given:  "a principal carrying the required token"
+		expect: "Ok(true)"
+	}, {
+		given:  "a principal not carrying the required token"
+		expect: "Ok(false) — denial is not Err"
+	}, {
+		given:  "a principal with empty authority"
+		expect: "Ok(false) for any required token"
+	}, {
+		given:  "the exact same token repeated in the authority list"
+		expect: "Ok(true) — duplicates are harmless"
+	}, {
+		given:  "a token that is a prefix of the required token"
+		expect: "Ok(false) — matching is exact"
+	}, {
+		given:  "a malformed principal (missing authority)"
+		expect: "Err INTERNAL"
+	}]
+}

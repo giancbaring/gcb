@@ -1,0 +1,103 @@
+package authentication
+import "gcb.example/core/core/schema"
+
+login: schema.#Composition & {
+	kind:    "composition"
+	id:      "login"
+	version: "1.0.0"
+	domain:  "identity"
+	api:     "identity-authentication"
+	description: """
+		The full login use case. Authenticate a credential, then establish a Session from the resulting Assertion. This is the composition a login endpoint invokes. It adds no invariants of its own — every guarantee is inherited from authenticate and create-session.
+
+		"""
+	interface: {
+		inputs: [{
+			name: "identifier", type: "Identifier", required: true
+		}, {
+			name: "credential", type: "Credential", required: true
+		}, {
+			name: "context", type: "AuthenticationContext", required: true
+		}, {
+			name: "comparator", type: "Comparator", required: true
+		}, {
+			name: "session_id_gen", type: "IdGenerator", required: true
+		}, {
+			name: "session_lifetime", type: "Duration", required: true
+		}, {
+			name: "clock", type: "() => Timestamp", required: true
+		}]
+		outputs: [{type: "Result<Session, AuthFailure>"}]
+	}
+	depends_on: {
+		primitives: [
+			"result",
+			"identifier",
+			"credential",
+			"session",
+			"timestamp",
+			"auth-failure",
+		]
+		functions: ["create-session"]
+		compositions: ["authenticate"]
+	}
+	invariants: [
+		"Never throws. All failures are returned as Err.",
+		"Failure codes are preserved from the underlying step.",
+		"No Session is created when authentication fails.",
+		"The returned Session is in state 'active'.",
+		"The credential never appears in the returned value or error.",
+	]
+	threats: [{
+		id:   "T1"
+		name: "Session established without authentication"
+		mitigation: """
+			createSession is called only on the Ok branch of authenticate. A failed authentication short-circuits and produces no session.
+
+			"""
+	}, {
+		id:   "T2"
+		name: "Credential leakage"
+		mitigation: """
+			The credential is consumed by authenticate and never echoed.
+
+			"""
+	}, {
+		id:   "T3"
+		name: "Zero lifetime"
+		mitigation: """
+			createSession rejects a zero or negative lifetime. login surfaces that as INTERNAL.
+
+			"""
+	}, {
+		id:   "T4"
+		name: "Hidden clock"
+		mitigation: """
+			clock is a required argument. Both authentication and session creation use the same clock — a caller cannot supply two different ones by accident.
+
+			"""
+	}]
+	bindings: "gms-governance": session_lifetime: "PT1H (3600 seconds)"
+	tests: [{
+		given:  "valid credentials and a positive session lifetime"
+		expect: "Ok carrying an active Session"
+	}, {
+		given:  "the returned Session"
+		expect: "its principal carries the authenticated subject"
+	}, {
+		given:  "an unknown identifier"
+		expect: "Err UNKNOWN_SUBJECT; no Session is created"
+	}, {
+		given:  "a mismatching credential"
+		expect: "Err MISMATCH; no Session is created"
+	}, {
+		given:  "a zero session lifetime"
+		expect: "Err INTERNAL"
+	}, {
+		given:  "any failure"
+		expect: "the credential is not present in the error"
+	}, {
+		given:  "the returned Session"
+		expect: "isFrozen is true"
+	}]
+}

@@ -1,0 +1,93 @@
+package establishment
+import "gcb.example/core/core/schema"
+
+createSession: schema.#Function & {
+	kind:    "function"
+	id:      "create-session"
+	version: "1.0.0"
+	domain:  "identity"
+	module:  "session/establishment"
+	api:     "session-management"
+	description: """
+		Establish a Session from a verified Assertion. The Session is the long-lived context that survives between requests. It carries the Principal built from the Assertion and a bounded lifetime. This is the only function permitted to transition an Assertion into a Session.
+
+		"""
+	interface: {
+		inputs: [{
+			name: "assertion", type: "Assertion", required: true
+		}, {
+			name: "lifetime", type: "Duration", required: true
+		}, {
+			name: "clock", type: "() => Timestamp", required: true
+		}]
+		outputs: [{type: "Result<Session, AuthFailure>"}]
+	}
+	depends_on: primitives: [
+		"result",
+		"assertion",
+		"principal",
+		"session",
+		"timestamp",
+		"identifier",
+		"auth-failure",
+	]
+	invariants: [
+		"The Session's principal carries the exact subject, sessionId, authority, and issuedAt from the Assertion.",
+		"expiresAt equals createdAt + lifetime. The function never adjusts the lifetime.",
+		"lifetime MUST be strictly positive. Zero or negative durations are rejected.",
+		"createdAt is produced by the supplied clock, never by an implicit call.",
+		"The Session is created in state 'active'. No other starting state is permitted here.",
+	]
+	threats: [{
+		id:   "T1"
+		name: "Indefinite session"
+		mitigation: """
+			lifetime is a required Duration and MUST be strictly positive. A caller cannot create a session that never expires.
+
+			"""
+	}, {
+		id:   "T2"
+		name: "Session from an unverified assertion"
+		mitigation: """
+			The input type is Assertion. Constructing one requires the authentication flow. A caller without an Assertion cannot invoke this function.
+
+			"""
+	}, {
+		id:   "T3"
+		name: "Clock substitution"
+		mitigation: """
+			clock is supplied by the caller, not read from the environment. Tests pin it; production supplies the real one. The function never consults Date.now().
+
+			"""
+	}, {
+		id:   "T4"
+		name: "Silent failure of session construction"
+		mitigation: """
+			Every failure path returns Err. A Session is either fully formed or not formed at all.
+
+			"""
+	}]
+	bindings: "gms-governance": {
+		lifetime_default: "PT1H (3600 seconds)"
+		clock:            "() => now()"
+	}
+	tests: [{
+		given:  "a valid assertion, positive lifetime, and a clock"
+		expect: "Ok carrying a Session in state 'active'"
+	}, {
+		given:  "expiresAt equals createdAt + lifetime"
+		expect: "the invariant holds exactly"
+	}, {
+		given:  "a zero-length lifetime"
+		expect: "Err INTERNAL — session construction rejected"
+	}, {
+		given:  "a negative lifetime"
+		expect: "Err INTERNAL"
+	}, {
+		given:  "the resulting Session"
+		expect: "its principal carries the assertion's subject and sessionId"
+	}, {
+		given:  "the resulting Session"
+		expect: "is frozen"
+	}]
+}

@@ -1,0 +1,62 @@
+package primitives
+import "gcb.example/core/core/schema"
+
+rateLimitFailure: schema.#Primitive & {
+	kind:    "primitive"
+	id:      "rate-limit-failure"
+	version: "1.0.0"
+	domain:  "foundation"
+	description: """
+		A closed enumeration of the ways a rate limit check may resolve that are not a plain allowance. Rate limiting asks "has this actor made too many attempts recently?" — a question distinct from authentication and authorization. The refusal is neither a policy denial nor a credential failure; it is a throttling decision.
+
+		"""
+	shape: {
+		type: "closed-union"
+		variants: [{
+			id: "RATE_LIMITED", meaning: "the actor has exceeded the configured limit"
+		}, {
+			id: "INTERNAL", meaning: "a system fault prevented the check"
+		}]
+	}
+	invariants: [
+		"A RateLimitFailure is exactly one of the declared variants.",
+		"RATE_LIMITED is the expected outcome of a legitimate throttle.",
+		"INTERNAL is reserved for system faults; it is never a throttle.",
+		"The primitive carries no window, count, or threshold. Those belong to the caller's policy, not the failure value.",
+	]
+	threats: [{
+		id:   "T1"
+		name: "Throttle treated as system fault"
+		mitigation: """
+			RATE_LIMITED and INTERNAL are distinct. Monitoring can alert on INTERNAL without firing on every throttle.
+
+			"""
+	}, {
+		id:   "T2"
+		name: "Oracle via timing"
+		mitigation: """
+			The failure value carries no information about the counter, the window, or the remaining allowance. A caller cannot use a failure to measure the limit.
+
+			"""
+	}, {
+		id:   "T3"
+		name: "Exception escape"
+		mitigation: """
+			No rate-limit function throws a RateLimitFailure. It is a value.
+
+			"""
+	}]
+	tests: [{
+		given:  "every declared variant"
+		expect: "isRateLimitFailure returns true"
+	}, {
+		given:  "an unknown string"
+		expect: "isRateLimitFailure returns false"
+	}, {
+		given:  "RATE_LIMITED and INTERNAL"
+		expect: "they are distinct values"
+	}, {
+		given:  "the complete set"
+		expect: "exactly two distinct values"
+	}]
+}
