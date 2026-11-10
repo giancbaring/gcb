@@ -1,0 +1,39 @@
+#!/usr/bin/env node
+
+import { spawnSync } from 'node:child_process'
+import { dirname, extname, resolve } from 'node:path'
+
+const root = resolve(dirname(process.argv[1]), '..')
+
+const staged = spawnSync('git diff --cached --name-only --diff-filter=ACMR', {
+  cwd: root,
+  shell: true,
+  encoding: 'utf8',
+})
+
+if (staged.error || staged.status !== 0) {
+  if (staged.stdout) process.stdout.write(staged.stdout)
+  if (staged.stderr) process.stderr.write(staged.stderr)
+  process.stderr.write('PRE-COMMIT FAILED: unable to read staged paths.\n')
+  process.exit(Number.isInteger(staged.status) && staged.status !== 0 ? staged.status : 1)
+}
+
+const cueFiles = (staged.stdout || '')
+  .split(/\r?\n/)
+  .filter(Boolean)
+  .filter(path => extname(path) === '.cue')
+
+if (!cueFiles.length) process.exit(0)
+
+for (const file of cueFiles) {
+  const result = spawnSync('cue', ['vet', file], { cwd: root, encoding: 'utf8' })
+  if (result.status !== 0) {
+    process.stderr.write(`PRE-COMMIT FAILED: cue vet ${file}\n`)
+    if (result.stdout) process.stdout.write(result.stdout)
+    if (result.stderr) process.stderr.write(result.stderr)
+    if (result.error) process.stderr.write(`${result.error.message}\n`)
+    process.exit(Number.isInteger(result.status) && result.status !== 0 ? result.status : 1)
+  }
+}
+
+process.stdout.write('PRE-COMMIT PASSED: cue vet\n')

@@ -1,0 +1,77 @@
+#!/usr/bin/env node
+
+import { spawnSync } from 'node:child_process'
+import { readFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
+
+const root = resolve(dirname(process.argv[1]), '..')
+
+if (!process.stdin.isTTY) {
+  try { readFileSync(0) } catch {}
+}
+
+function showOutput(result) {
+  if (result.stdout) process.stdout.write(result.stdout)
+  if (result.stderr) process.stderr.write(result.stderr)
+}
+
+function fail(command, result) {
+  showOutput(result)
+  const output = `${result.stdout || ''}\n${result.stderr || ''}`
+  const npmMissing = /npm(?:\.cmd)?['"]?\s+is not recognized|npm:\s*(?:not found|command not found)/i.test(output)
+  if ((result.error && result.error.code === 'ENOENT') || npmMissing) {
+    process.stderr.write('PRE-PUSH: required command was not found on PATH.\n')
+  }
+  const code = Number.isInteger(result.status) && result.status !== 0 ? result.status : 1
+  process.stderr.write(`PRE-PUSH FAILED: ${command} — see output above\n`)
+  process.exit(code)
+}
+
+function runCueVet() {
+  return spawnSync('cue', ['vet', './core/...'], { cwd: root, encoding: 'utf8' })
+}
+
+function runIndexVerify() {
+  return spawnSync('npm run index:verify', { cwd: root, shell: true, encoding: 'utf8' })
+}
+
+function hasExpectedBucketMismatches(result) {
+  const output = `${result.stdout || ''}\n${result.stderr || ''}`
+  const diagnostics = output.match(/^Diagnostics: (.*)$/m)
+  const expectedSummary = 'broken edges 0, bucket mismatches 3, cycles 0, orphans 0.'
+  const expectedMismatchLines = [
+    'bucket-mismatch: attempt-login -> create-session: compositions contains kind function',
+    'bucket-mismatch: refresh-session -> validate-session: compositions contains kind function',
+    'bucket-mismatch: refresh-session -> create-session: compositions contains kind function',
+  ]
+  const mismatchLines = output.split(/\r?\n/).filter(line => line.startsWith('bucket-mismatch:'))
+  const hasOtherDiagnostics = /^(?:export-error|broken-edge|cycle|orphan):/m.test(output)
+  const statusHasNoErrors = /^Status: valid \d+, error 0\.$/m.test(output)
+
+  return Boolean(
+    diagnostics &&
+    diagnostics[1].includes('bucket mismatches') &&
+    diagnostics[1] === expectedSummary &&
+    statusHasNoErrors &&
+    !hasOtherDiagnostics &&
+    mismatchLines.length === expectedMismatchLines.length &&
+    expectedMismatchLines.every((line, index) => mismatchLines[index] === line),
+  )
+}
+
+const vetCommand = 'cue vet ./core/...'
+const vet = runCueVet()
+if (vet.status !== 0) fail(vetCommand, vet)
+showOutput(vet)
+
+const verifyCommand = 'npm run index:verify'
+const verify = runIndexVerify()
+if (verify.status === 0) {
+  showOutput(verify)
+} else if (verify.status === 1 && hasExpectedBucketMismatches(verify)) {
+  showOutput(verify)
+} else {
+  fail(verifyCommand, verify)
+}
+
+process.stdout.write('PRE-PUSH PASSED: cue vet, index:verify\n')

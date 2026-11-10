@@ -11,6 +11,12 @@ build/
 # Test coverage
 coverage/
 
+# Generated contract index
+/index/out/
+
+# Local-only applications
+/boardplex/
+
 # Environment
 .env
 .env.*
